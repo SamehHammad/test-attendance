@@ -25,7 +25,7 @@ export function DeviceForm({ isOpen, onClose, onSuccess, device }: DeviceFormPro
     reset,
     formState: { errors, isSubmitting },
   } = useForm<DeviceFormData>({
-    resolver: zodResolver(deviceSchema),
+    resolver: zodResolver(deviceSchema) as any,
     defaultValues: device ?? { port: 4370 },
   });
 
