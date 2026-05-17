@@ -1,0 +1,56 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Device {
+  id          String   @id @default(cuid())
+  name        String
+  ip          String
+  port        Int      @default(4370)
+  location    String?
+  isActive    Boolean  @default(true)
+  lastSync    DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  employees   Employee[]
+  attendance  AttendanceRecord[]
+
+  @@map("devices")
+}
+
+model Employee {
+  id           String   @id @default(cuid())
+  deviceUserId String
+  name         String
+  department   String?
+  position     String?
+  deviceId     String
+  device       Device   @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  attendance   AttendanceRecord[]
+
+  @@unique([deviceUserId, deviceId])
+  @@map("employees")
+}
+
+model AttendanceRecord {
+  id           String   @id @default(cuid())
+  deviceUserId String
+  recordTime   DateTime
+  type         Int      @default(0)
+  deviceId     String
+  employeeId   String?
+  device       Device   @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+  employee     Employee? @relation(fields: [employeeId], references: [id])
+  createdAt    DateTime @default(now())
+
+  @@map("attendance_records")
+}
