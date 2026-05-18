@@ -51,16 +51,16 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
           isOpen ? "translate-x-0" : "translate-x-full lg:translate-x-0"
         )}
       >
-        <div className="flex h-full flex-col bg-gray-900 dark:bg-gray-950 shadow-2xl">
+        <div className="flex h-full flex-col bg-white border-l border-gray-200">
           {/* Logo */}
-          <div className="flex items-center justify-between px-6 py-5 border-b border-gray-700/50">
+          <div className="flex items-center justify-between px-6 py-5 border-b border-gray-100">
             <Link href="/dashboard" className="flex items-center gap-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-violet-600 shadow-lg">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gray-900 shadow-sm">
                 <Fingerprint className="h-5 w-5 text-white" />
               </div>
               <div>
-                <p className="text-sm font-bold text-white leading-tight">ZK Attendance</p>
-                <p className="text-[10px] text-gray-400">نظام الحضور والانصراف</p>
+                <p className="text-sm font-bold text-gray-900 leading-tight">ZK Attendance</p>
+                <p className="text-[10px] text-gray-500">نظام الحضور والانصراف</p>
               </div>
             </Link>
             <button
@@ -72,46 +72,42 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
           </div>
 
           {/* Navigation */}
-          <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-1">
-            <p className="px-3 mb-3 text-[10px] font-semibold uppercase tracking-wider text-gray-500">
+          <nav className="flex-1 overflow-y-auto px-4 py-6 space-y-2">
+            <p className="px-2 mb-4 text-xs font-bold uppercase tracking-wider text-gray-400">
               القائمة الرئيسية
             </p>
             {navItems.map((item) => {
-              const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
+              const isActive = item.href === "/dashboard" 
+                ? pathname === item.href 
+                : pathname === item.href || pathname.startsWith(item.href + "/");
               const Icon = item.icon;
               return (
-                <Link key={item.href} href={item.href} onClick={onClose}>
-                  <motion.div
-                    whileHover={{ x: -3 }}
-                    whileTap={{ scale: 0.97 }}
+                <Link key={item.href} href={item.href} onClick={onClose} className="block">
+                  <div
                     className={cn(
-                      "relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200",
+                      "flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold transition-all duration-200 group",
                       isActive
-                        ? "bg-gradient-to-l from-blue-600/20 to-violet-600/20 text-white"
-                        : "text-gray-400 hover:bg-gray-800/60 hover:text-gray-200"
+                        ? "bg-blue-50 text-blue-700"
+                        : "text-gray-500 hover:bg-gray-50 hover:text-gray-900"
                     )}
                   >
-                    {isActive && (
-                      <motion.div
-                        layoutId="activeNav"
-                        className="absolute inset-0 rounded-xl bg-gradient-to-l from-blue-600/20 to-violet-600/20 border border-blue-500/20"
-                      />
-                    )}
-                    <Icon className={cn("h-4.5 w-4.5 shrink-0 relative z-10", isActive && "text-blue-400")} size={18} />
-                    <span className="relative z-10">{item.label}</span>
-                    {isActive && (
-                      <ChevronRight className="mr-auto h-4 w-4 text-blue-400 relative z-10 rotate-180" />
-                    )}
-                  </motion.div>
+                    <Icon 
+                      className={cn(
+                        "h-5 w-5 shrink-0 transition-transform duration-200", 
+                        isActive ? "text-blue-600" : "text-gray-400 group-hover:scale-110"
+                      )} 
+                    />
+                    <span>{item.label}</span>
+                  </div>
                 </Link>
               );
             })}
           </nav>
 
           {/* Footer */}
-          <div className="px-4 py-4 border-t border-gray-700/50">
+          <div className="px-4 py-4 border-t border-gray-100">
             <div className="flex items-center gap-3 px-2">
-              <div className="h-8 w-8 rounded-full bg-gradient-to-br from-blue-400 to-violet-500 flex items-center justify-center text-white text-xs font-bold">
+              <div className="h-8 w-8 rounded-full bg-gray-900 flex items-center justify-center text-white text-xs font-bold">
                 ZK
               </div>
               <div>

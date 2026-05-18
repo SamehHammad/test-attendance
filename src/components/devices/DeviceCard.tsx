@@ -84,7 +84,7 @@ export function DeviceCard({ device, onEdit, onDelete, onRefresh, index }: Devic
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.35, delay: index * 0.07 }}
-      className="group relative rounded-2xl bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 p-5 shadow-sm hover:shadow-lg hover:border-blue-200 dark:hover:border-blue-800 transition-all duration-300"
+      className="group relative rounded-2xl bg-white border border-gray-200 p-5 shadow-sm hover:shadow-md hover:border-gray-300 transition-all duration-300"
     >
       {/* Status Indicator */}
       <div className="absolute top-4 left-4">
@@ -93,9 +93,8 @@ export function DeviceCard({ device, onEdit, onDelete, onRefresh, index }: Devic
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
           )}
           <span
-            className={`relative inline-flex h-2.5 w-2.5 rounded-full ${
-              device.isActive ? "bg-emerald-500" : "bg-gray-300 dark:bg-gray-600"
-            }`}
+            className={`relative inline-flex h-2.5 w-2.5 rounded-full ${device.isActive ? "bg-emerald-500" : "bg-gray-300"
+              }`}
           />
         </span>
       </div>
@@ -105,23 +104,23 @@ export function DeviceCard({ device, onEdit, onDelete, onRefresh, index }: Devic
         <div className="relative">
           <button
             onClick={() => setMenuOpen(!menuOpen)}
-            className="h-7 w-7 flex items-center justify-center rounded-lg text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+            className="h-7 w-7 flex items-center justify-center rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors"
           >
             <MoreVertical className="h-4 w-4" />
           </button>
           {menuOpen && (
             <>
               <div className="fixed inset-0 z-10" onClick={() => setMenuOpen(false)} />
-              <div className="absolute left-0 top-8 z-20 w-36 rounded-xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-xl py-1">
+              <div className="absolute left-0 top-8 z-20 w-36 rounded-xl border border-gray-200 bg-white shadow-xl py-1">
                 <button
                   onClick={() => { onEdit(); setMenuOpen(false); }}
-                  className="flex w-full items-center gap-2 px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800"
+                  className="flex w-full items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
                 >
                   <Pencil className="h-3.5 w-3.5" /> تعديل
                 </button>
                 <button
                   onClick={() => { handleDelete(); setMenuOpen(false); }}
-                  className="flex w-full items-center gap-2 px-3 py-2 text-sm text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/10"
+                  className="flex w-full items-center gap-2 px-3 py-2 text-sm text-rose-600 hover:bg-rose-50"
                 >
                   <Trash2 className="h-3.5 w-3.5" /> حذف
                 </button>
@@ -133,18 +132,18 @@ export function DeviceCard({ device, onEdit, onDelete, onRefresh, index }: Devic
 
       {/* Icon + Name */}
       <div className="mb-4 flex items-center gap-3 mt-1">
-        <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-500 to-violet-600 shadow-lg shadow-blue-500/20">
-          <Monitor className="h-5 w-5 text-white" />
+        <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gray-50 border border-gray-100">
+          <Monitor className="h-5 w-5 text-gray-700" />
         </div>
         <div>
-          <h3 className="font-semibold text-gray-900 dark:text-white text-sm leading-tight">
+          <h3 className="font-semibold text-gray-900 text-sm leading-tight">
             {device.name}
           </h3>
-          <Badge variant={device.isActive ? "success" : "default"}>
+          <Badge variant={device.isActive ? "success" : "default"} className="h-5 text-xs bg-green-500 ">
             {device.isActive ? (
-              <><Wifi className="h-2.5 w-2.5" /> متصل</>
+              <p className="text-xs flex items-center gap-1 bg-green-500 text-white px-1"><Wifi className="h-2.5 w-2.5 text-xs" /> متصل</p>
             ) : (
-              <><WifiOff className="h-2.5 w-2.5" /> غير متصل</>
+              <p className="text-xs flex items-center gap-1 px-1"><WifiOff className="h-2.5 w-2.5 text-xs" /> غير متصل</p>
             )}
           </Badge>
         </div>
@@ -152,21 +151,21 @@ export function DeviceCard({ device, onEdit, onDelete, onRefresh, index }: Devic
 
       {/* Info */}
       <div className="space-y-1.5 mb-4">
-        <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
-          <Hash className="h-3.5 w-3.5 text-blue-400" />
+        <div className="flex items-center gap-2 text-xs text-gray-500">
+          <Hash className="h-3.5 w-3.5 text-gray-400" />
           <span dir="ltr" className="font-mono">
             {device.ip}:{device.port}
           </span>
         </div>
         {device.location && (
-          <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
-            <MapPin className="h-3.5 w-3.5 text-violet-400" />
+          <div className="flex items-center gap-2 text-xs text-gray-500">
+            <MapPin className="h-3.5 w-3.5 text-gray-400" />
             <span>{device.location}</span>
           </div>
         )}
         {device.lastSync && (
-          <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
-            <Calendar className="h-3.5 w-3.5 text-amber-400" />
+          <div className="flex items-center gap-2 text-xs text-gray-500">
+            <Calendar className="h-3.5 w-3.5 text-gray-400" />
             <span>آخر مزامنة: {formatDateTime(device.lastSync)}</span>
           </div>
         )}
@@ -175,21 +174,21 @@ export function DeviceCard({ device, onEdit, onDelete, onRefresh, index }: Devic
       {/* Counts */}
       {device._count && (
         <div className="mb-4 grid grid-cols-2 gap-2">
-          <div className="rounded-xl bg-gray-50 dark:bg-gray-800/60 p-2.5 text-center">
-            <div className="flex items-center justify-center gap-1 text-gray-500 dark:text-gray-400 mb-0.5">
+          <div className="rounded-xl bg-gray-50 border border-gray-100 p-2.5 text-center">
+            <div className="flex items-center justify-center gap-1 text-gray-500 mb-0.5">
               <Users className="h-3 w-3" />
               <span className="text-[10px]">موظفون</span>
             </div>
-            <p className="text-lg font-bold text-gray-900 dark:text-white">
+            <p className="text-lg font-bold text-gray-900">
               {device._count.employees}
             </p>
           </div>
-          <div className="rounded-xl bg-gray-50 dark:bg-gray-800/60 p-2.5 text-center">
-            <div className="flex items-center justify-center gap-1 text-gray-500 dark:text-gray-400 mb-0.5">
+          <div className="rounded-xl bg-gray-50 border border-gray-100 p-2.5 text-center">
+            <div className="flex items-center justify-center gap-1 text-gray-500 mb-0.5">
               <ClipboardList className="h-3 w-3" />
               <span className="text-[10px]">سجلات</span>
             </div>
-            <p className="text-lg font-bold text-gray-900 dark:text-white">
+            <p className="text-lg font-bold text-gray-900">
               {device._count.attendance}
             </p>
           </div>
