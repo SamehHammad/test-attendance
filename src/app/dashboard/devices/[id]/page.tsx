@@ -1,12 +1,14 @@
 "use client";
 
-import { use, useState, useEffect } from "react";
+import { use, useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
   ArrowRight, Monitor, Wifi, WifiOff, RefreshCw, Pencil, Trash2,
   MapPin, Hash, Calendar, Users, ClipboardList, Settings,
-  Clock, Power, ShieldAlert, UserCheck, Cpu, Info
+  Clock, Power, ShieldAlert, UserCheck, Cpu, Info,
+  Lock, Unlock, DoorOpen, DoorClosed, Activity, Database,
+  Shield, UserPlus, UserMinus, Timer, Globe, Bell, Zap
 } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
@@ -35,11 +37,30 @@ export default function DeviceSettingsPage({ params }: ParamsProps) {
   const [clearingLogs, setClearingLogs] = useState(false);
   const [rebooting, setRebooting] = useState(false);
 
+  // New Control Actions Loading states
+  const [disabling, setDisabling] = useState(false);
+  const [enabling, setEnabling] = useState(false);
+  const [poweringOff, setPoweringOff] = useState(false);
+  const [clearingData, setClearingData] = useState(false);
+  const [refreshingData, setRefreshingData] = useState(false);
+  const [clearingAdmins, setClearingAdmins] = useState(false);
+  const [enablingClock, setEnablingClock] = useState(false);
+  const [unlockingDoor, setUnlockingDoor] = useState(false);
+  const [enablingRealtime, setEnablingRealtime] = useState(false);
+  const [clearingSuperLog, setClearingSuperLog] = useState(false);
+
   // Hardware Parameters
   const [paramsData, setParamsData] = useState<any>(null);
   const [loadingParams, setLoadingParams] = useState(false);
 
-  const fetchDevice = async () => {
+  // Device State
+  const [deviceState, setDeviceState] = useState<any>(null);
+  const [doorState, setDoorState] = useState<any>(null);
+
+  // Tab state
+  const [activeTab, setActiveTab] = useState("general");
+
+  const fetchDevice = useCallback(async () => {
     setLoading(true);
     try {
       const res = await axios.get(`/api/devices/${id}`);
@@ -55,9 +76,9 @@ export default function DeviceSettingsPage({ params }: ParamsProps) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [id, router]);
 
-  const fetchParameters = async () => {
+  const fetchParameters = useCallback(async () => {
     setLoadingParams(true);
     try {
       const res = await axios.get(`/api/devices/${id}/parameters`);
@@ -69,12 +90,36 @@ export default function DeviceSettingsPage({ params }: ParamsProps) {
     } finally {
       setLoadingParams(false);
     }
-  };
+  }, [id]);
+
+  const fetchDeviceState = useCallback(async () => {
+    try {
+      const res = await axios.get(`/api/devices/${id}/device-state`);
+      if (res.data.success) {
+        setDeviceState(res.data.state);
+      }
+    } catch {
+      // Fail silently
+    }
+  }, [id]);
+
+  const fetchDoorState = useCallback(async () => {
+    try {
+      const res = await axios.get(`/api/devices/${id}/door-state`);
+      if (res.data.success) {
+        setDoorState(res.data.state);
+      }
+    } catch {
+      // Fail silently
+    }
+  }, [id]);
 
   useEffect(() => {
     fetchDevice();
     fetchParameters();
-  }, [id]);
+    fetchDeviceState();
+    fetchDoorState();
+  }, [fetchDevice, fetchParameters, fetchDeviceState, fetchDoorState]);
 
   const handleTestConnection = async () => {
     setTestingConn(true);
@@ -179,6 +224,175 @@ export default function DeviceSettingsPage({ params }: ParamsProps) {
     }
   };
 
+  const handleDisableDevice = async () => {
+    if (!confirm("هل أنت متأكد من تعطيل الجهاز؟ سيتم إيقاف جميع العمليات.")) return;
+    setDisabling(true);
+    try {
+      const res = await axios.post(`/api/devices/${id}/disable-device`);
+      if (res.data.success) {
+        toast.success(res.data.message);
+        fetchDeviceState();
+      } else {
+        toast.error(res.data.error);
+      }
+    } catch {
+      toast.error("فشل في تعطيل الجهاز");
+    } finally {
+      setDisabling(false);
+    }
+  };
+
+  const handleEnableDevice = async () => {
+    setEnabling(true);
+    try {
+      const res = await axios.post(`/api/devices/${id}/enable-device`);
+      if (res.data.success) {
+        toast.success(res.data.message);
+        fetchDeviceState();
+      } else {
+        toast.error(res.data.error);
+      }
+    } catch {
+      toast.error("فشل في تفعيل الجهاز");
+    } finally {
+      setEnabling(false);
+    }
+  };
+
+  const handlePowerOff = async () => {
+    if (!confirm("⚠️ تحذير: هل أنت متأكد من إيقاف تشغيل الجهاز؟ سيتم إيقافه بالكامل.")) return;
+    setPoweringOff(true);
+    try {
+      const res = await axios.post(`/api/devices/${id}/power-off`);
+      if (res.data.success) {
+        toast.success(res.data.message);
+      } else {
+        toast.error(res.data.error);
+      }
+    } catch {
+      toast.error("فشل في إيقاف تشغيل الجهاز");
+    } finally {
+      setPoweringOff(false);
+    }
+  };
+
+  const handleClearData = async () => {
+    if (!confirm("⚠️ تحذير شديد: هل أنت متأكد من مسح جميع البيانات؟ سيتم حذف المستخدمين والسجلات.")) return;
+    setClearingData(true);
+    try {
+      const res = await axios.post(`/api/devices/${id}/clear-data`);
+      if (res.data.success) {
+        toast.success(res.data.message);
+        fetchDevice();
+      } else {
+        toast.error(res.data.error);
+      }
+    } catch {
+      toast.error("فشل في مسح البيانات");
+    } finally {
+      setClearingData(false);
+    }
+  };
+
+  const handleRefreshData = async () => {
+    setRefreshingData(true);
+    try {
+      const res = await axios.post(`/api/devices/${id}/refresh-data`);
+      if (res.data.success) {
+        toast.success(res.data.message);
+      } else {
+        toast.error(res.data.error);
+      }
+    } catch {
+      toast.error("فشل في تحديث البيانات");
+    } finally {
+      setRefreshingData(false);
+    }
+  };
+
+  const handleClearAdmins = async () => {
+    if (!confirm("⚠️ تحذير: هل أنت متأكد من مسح جميع المشرفين؟ سيتم تحويل جميع المستخدمين إلى مستخدمين عاديين.")) return;
+    setClearingAdmins(true);
+    try {
+      const res = await axios.post(`/api/devices/${id}/clear-admins`);
+      if (res.data.success) {
+        toast.success(res.data.message);
+      } else {
+        toast.error(res.data.error);
+      }
+    } catch {
+      toast.error("فشل في مسح المشرفين");
+    } finally {
+      setClearingAdmins(false);
+    }
+  };
+
+  const handleEnableClock = async () => {
+    setEnablingClock(true);
+    try {
+      const res = await axios.post(`/api/devices/${id}/enable-clock`);
+      if (res.data.success) {
+        toast.success(res.data.message);
+      } else {
+        toast.error(res.data.error);
+      }
+    } catch {
+      toast.error("فشل في تفعيل الساعة");
+    } finally {
+      setEnablingClock(false);
+    }
+  };
+
+  const handleUnlockDoor = async () => {
+    setUnlockingDoor(true);
+    try {
+      const res = await axios.post(`/api/devices/${id}/unlock-door`);
+      if (res.data.success) {
+        toast.success(res.data.message);
+        fetchDoorState();
+      } else {
+        toast.error(res.data.error);
+      }
+    } catch {
+      toast.error("فشل في فتح الباب");
+    } finally {
+      setUnlockingDoor(false);
+    }
+  };
+
+  const handleEnableRealtime = async () => {
+    setEnablingRealtime(true);
+    try {
+      const res = await axios.post(`/api/devices/${id}/enable-realtime`);
+      if (res.data.success) {
+        toast.success(res.data.message);
+      } else {
+        toast.error(res.data.error);
+      }
+    } catch {
+      toast.error("فشل في تفعيل الوضع الفوري");
+    } finally {
+      setEnablingRealtime(false);
+    }
+  };
+
+  const handleClearSuperLog = async () => {
+    if (!confirm("⚠️ تحذير: هل أنت متأكد من مسح سجلات المشرفين؟")) return;
+    setClearingSuperLog(true);
+    try {
+      const res = await axios.post(`/api/devices/${id}/clear-super-log`);
+      if (res.data.success) {
+        toast.success(res.data.message);
+      } else {
+        toast.error(res.data.error);
+      }
+    } catch {
+      toast.error("فشل في مسح سجلات المشرفين");
+    } finally {
+      setClearingSuperLog(false);
+    }
+  };
+
   const handleDelete = async () => {
     if (!confirm(`هل أنت متأكد من حذف الجهاز "${device.name}"؟`)) return;
     try {
@@ -233,19 +447,69 @@ export default function DeviceSettingsPage({ params }: ParamsProps) {
         </div>
       </div>
 
+      {/* Tabs Navigation */}
+      <div className="bg-white rounded-2xl border border-gray-200 p-2 flex gap-2 overflow-x-auto">
+        <button
+          onClick={() => setActiveTab("general")}
+          className={`flex-1 min-w-[120px] px-4 py-2 rounded-xl text-sm font-semibold transition-colors ${
+            activeTab === "general" ? "bg-blue-600 text-white" : "text-gray-600 hover:bg-gray-100"
+          }`}
+        >
+          <Settings className="h-4 w-4 inline ml-2" />
+          عام
+        </button>
+        <button
+          onClick={() => setActiveTab("users")}
+          className={`flex-1 min-w-[120px] px-4 py-2 rounded-xl text-sm font-semibold transition-colors ${
+            activeTab === "users" ? "bg-blue-600 text-white" : "text-gray-600 hover:bg-gray-100"
+          }`}
+        >
+          <Users className="h-4 w-4 inline ml-2" />
+          المستخدمين
+        </button>
+        <button
+          onClick={() => setActiveTab("schedule")}
+          className={`flex-1 min-w-[120px] px-4 py-2 rounded-xl text-sm font-semibold transition-colors ${
+            activeTab === "schedule" ? "bg-blue-600 text-white" : "text-gray-600 hover:bg-gray-100"
+          }`}
+        >
+          <Timer className="h-4 w-4 inline ml-2" />
+          المواعيد
+        </button>
+        <button
+          onClick={() => setActiveTab("security")}
+          className={`flex-1 min-w-[120px] px-4 py-2 rounded-xl text-sm font-semibold transition-colors ${
+            activeTab === "security" ? "bg-blue-600 text-white" : "text-gray-600 hover:bg-gray-100"
+          }`}
+        >
+          <Shield className="h-4 w-4 inline ml-2" />
+          الأمان
+        </button>
+        <button
+          onClick={() => setActiveTab("advanced")}
+          className={`flex-1 min-w-[120px] px-4 py-2 rounded-xl text-sm font-semibold transition-colors ${
+            activeTab === "advanced" ? "bg-blue-600 text-white" : "text-gray-600 hover:bg-gray-100"
+          }`}
+        >
+          <Zap className="h-4 w-4 inline ml-2" />
+          متقدم
+        </button>
+      </div>
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         
         {/* Right Column: Advanced Controls Panel */}
         <div className="lg:col-span-2 space-y-6">
           
-          {/* Main Controls Card */}
-          <div className="bg-white rounded-2xl border border-gray-200 p-6 space-y-4">
-            <h2 className="text-md font-bold text-gray-900 flex items-center gap-2 border-b border-gray-100 pb-3">
-              <Settings className="h-5 w-5 text-blue-600" />
-              لوحة العمليات والتحكم بالجهاز عن بعد
-            </h2>
+          {/* Main Controls Card - General Tab */}
+          {activeTab === "general" && (
+            <div className="bg-white rounded-2xl border border-gray-200 p-6 space-y-4">
+              <h2 className="text-md font-bold text-gray-900 flex items-center gap-2 border-b border-gray-100 pb-3">
+                <Settings className="h-5 w-5 text-blue-600" />
+                لوحة العمليات والتحكم بالجهاز عن بعد
+              </h2>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               
               {/* Sync Users */}
               <div className="p-4 rounded-xl border border-gray-200 bg-white hover:border-blue-200 transition-colors flex flex-col justify-between h-44">
@@ -328,8 +592,9 @@ export default function DeviceSettingsPage({ params }: ParamsProps) {
 
             </div>
           </div>
+          )}
 
-          {/* Quick Actions Panel */}
+          {/* Quick Actions Panel - Always Visible */}
           <div className="bg-white rounded-2xl border border-gray-200 p-6 space-y-4">
             <h2 className="text-md font-bold text-gray-900 flex items-center gap-2">
               <ClipboardList className="h-5 w-5 text-emerald-600" />
@@ -361,6 +626,386 @@ export default function DeviceSettingsPage({ params }: ParamsProps) {
               </div>
             </div>
           </div>
+
+          {/* Device Control Tab */}
+          {activeTab === "general" && (
+            <div className="bg-white rounded-2xl border border-gray-200 p-6 space-y-4">
+              <h2 className="text-md font-bold text-gray-900 flex items-center gap-2">
+                <Power className="h-5 w-5 text-purple-600" />
+                التحكم بتشغيل الجهاز
+              </h2>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="p-4 rounded-xl border border-gray-200 bg-white hover:border-green-200 transition-colors">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-green-50 text-green-600 mb-3">
+                    <Lock className="h-5 w-5" />
+                  </div>
+                  <h3 className="font-bold text-gray-900 text-sm">تعطيل الجهاز</h3>
+                  <p className="text-[11px] text-gray-400 mt-1">إيقاف جميع العمليات مؤقتاً</p>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={handleDisableDevice}
+                    loading={disabling}
+                    className="w-full mt-3 text-xs"
+                  >
+                    تعطيل
+                  </Button>
+                </div>
+
+                <div className="p-4 rounded-xl border border-gray-200 bg-white hover:border-blue-200 transition-colors">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-blue-600 mb-3">
+                    <Unlock className="h-5 w-5" />
+                  </div>
+                  <h3 className="font-bold text-gray-900 text-sm">تفعيل الجهاز</h3>
+                  <p className="text-[11px] text-gray-400 mt-1">إعادة تشغيل العمليات</p>
+                  <Button
+                    size="sm"
+                    onClick={handleEnableDevice}
+                    loading={enabling}
+                    className="w-full mt-3 text-xs"
+                  >
+                    تفعيل
+                  </Button>
+                </div>
+
+                <div className="p-4 rounded-xl border border-gray-200 bg-white hover:border-red-200 transition-colors">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-red-50 text-red-600 mb-3">
+                    <Power className="h-5 w-5" />
+                  </div>
+                  <h3 className="font-bold text-gray-900 text-sm">إيقاف التشغيل</h3>
+                  <p className="text-[11px] text-gray-400 mt-1">إيقاف الجهاز بالكامل</p>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={handlePowerOff}
+                    loading={poweringOff}
+                    className="w-full mt-3 text-xs border-red-200 text-red-700 hover:bg-red-50"
+                  >
+                    إيقاف
+                  </Button>
+                </div>
+              </div>
+
+              {deviceState && (
+                <div className="mt-4 p-4 bg-gray-50 rounded-xl border border-gray-100">
+                  <div className="flex items-center gap-2 text-sm">
+                    <Activity className="h-4 w-4 text-gray-500" />
+                    <span className="text-gray-600">حالة الجهاز:</span>
+                    <Badge variant="default" className="mr-2">{deviceState.description}</Badge>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Data Management Tab */}
+          {activeTab === "general" && (
+            <div className="bg-white rounded-2xl border border-gray-200 p-6 space-y-4">
+              <h2 className="text-md font-bold text-gray-900 flex items-center gap-2">
+                <Database className="h-5 w-5 text-orange-600" />
+                إدارة البيانات
+              </h2>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="p-4 rounded-xl border border-gray-200 bg-white hover:border-orange-200 transition-colors">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-orange-50 text-orange-600 mb-3">
+                    <RefreshCw className="h-5 w-5" />
+                  </div>
+                  <h3 className="font-bold text-gray-900 text-sm">تحديث البيانات</h3>
+                  <p className="text-[11px] text-gray-400 mt-1">تحديث البيانات المحلية</p>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={handleRefreshData}
+                    loading={refreshingData}
+                    className="w-full mt-3 text-xs"
+                  >
+                    تحديث
+                  </Button>
+                </div>
+
+                <div className="p-4 rounded-xl border border-gray-200 bg-white hover:border-red-200 transition-colors">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-red-50 text-red-600 mb-3">
+                    <ShieldAlert className="h-5 w-5" />
+                  </div>
+                  <h3 className="font-bold text-gray-900 text-sm">مسح جميع البيانات</h3>
+                  <p className="text-[11px] text-red-500 mt-1 font-semibold">حذف كل شيء</p>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={handleClearData}
+                    loading={clearingData}
+                    className="w-full mt-3 text-xs bg-red-50 hover:bg-red-100 border-red-200 text-red-700 font-bold"
+                  >
+                    مسح الكل
+                  </Button>
+                </div>
+
+                <div className="p-4 rounded-xl border border-gray-200 bg-white hover:border-purple-200 transition-colors">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-purple-50 text-purple-600 mb-3">
+                    <Shield className="h-5 w-5" />
+                  </div>
+                  <h3 className="font-bold text-gray-900 text-sm">مسح المشرفين</h3>
+                  <p className="text-[11px] text-gray-400 mt-1">تحويل الكل لمستخدمين عاديين</p>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={handleClearAdmins}
+                    loading={clearingAdmins}
+                    className="w-full mt-3 text-xs"
+                  >
+                    مسح المشرفين
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Users Tab */}
+          {activeTab === "users" && (
+            <div className="bg-white rounded-2xl border border-gray-200 p-6 space-y-4">
+              <h2 className="text-md font-bold text-gray-900 flex items-center gap-2">
+                <Users className="h-5 w-5 text-blue-600" />
+                إدارة المستخدمين
+              </h2>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="p-4 rounded-xl border border-gray-200 bg-white hover:border-blue-200 transition-colors">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-blue-600 mb-3">
+                    <UserPlus className="h-5 w-5" />
+                  </div>
+                  <h3 className="font-bold text-gray-900 text-sm">إضافة مستخدم</h3>
+                  <p className="text-[11px] text-gray-400 mt-1">إضافة مستخدم جديد للجهاز</p>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="w-full mt-3 text-xs"
+                    onClick={() => toast("ميزة قيد التطوير")}
+                  >
+                    إضافة
+                  </Button>
+                </div>
+
+                <div className="p-4 rounded-xl border border-gray-200 bg-white hover:border-red-200 transition-colors">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-red-50 text-red-600 mb-3">
+                    <UserMinus className="h-5 w-5" />
+                  </div>
+                  <h3 className="font-bold text-gray-900 text-sm">حذف مستخدم</h3>
+                  <p className="text-[11px] text-gray-400 mt-1">حذف مستخدم من الجهاز</p>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="w-full mt-3 text-xs"
+                    onClick={() => toast("ميزة قيد التطوير")}
+                  >
+                    حذف
+                  </Button>
+                </div>
+
+                <div className="p-4 rounded-xl border border-gray-200 bg-white hover:border-green-200 transition-colors">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-green-50 text-green-600 mb-3">
+                    <UserCheck className="h-5 w-5" />
+                  </div>
+                  <h3 className="font-bold text-gray-900 text-sm">تفعيل/تعطيل مستخدم</h3>
+                  <p className="text-[11px] text-gray-400 mt-1">التحكم في صلاحيات المستخدم</p>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="w-full mt-3 text-xs"
+                    onClick={() => toast("ميزة قيد التطوير")}
+                  >
+                    التحكم
+                  </Button>
+                </div>
+
+                <div className="p-4 rounded-xl border border-gray-200 bg-white hover:border-purple-200 transition-colors">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-purple-50 text-purple-600 mb-3">
+                    <Shield className="h-5 w-5" />
+                  </div>
+                  <h3 className="font-bold text-gray-900 text-sm">مجموعة المستخدم</h3>
+                  <p className="text-[11px] text-gray-400 mt-1">تعيين مجموعة للمستخدم</p>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="w-full mt-3 text-xs"
+                    onClick={() => toast("ميزة قيد التطوير")}
+                  >
+                    تعيين
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Schedule Tab */}
+          {activeTab === "schedule" && (
+            <div className="bg-white rounded-2xl border border-gray-200 p-6 space-y-4">
+              <h2 className="text-md font-bold text-gray-900 flex items-center gap-2">
+                <Timer className="h-5 w-5 text-emerald-600" />
+                إدارة المواعيد والمناطق الزمنية
+              </h2>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="p-4 rounded-xl border border-gray-200 bg-white hover:border-emerald-200 transition-colors">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 mb-3">
+                    <Globe className="h-5 w-5" />
+                  </div>
+                  <h3 className="font-bold text-gray-900 text-sm">المناطق الزمنية</h3>
+                  <p className="text-[11px] text-gray-400 mt-1">إعداد مناطق الدخول والخروج</p>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="w-full mt-3 text-xs"
+                    onClick={() => toast("ميزة قيد التطوير")}
+                  >
+                    إعداد
+                  </Button>
+                </div>
+
+                <div className="p-4 rounded-xl border border-gray-200 bg-white hover:border-blue-200 transition-colors">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-blue-600 mb-3">
+                    <Clock className="h-5 w-5" />
+                  </div>
+                  <h3 className="font-bold text-gray-900 text-sm">مناطق المستخدم الزمنية</h3>
+                  <p className="text-[11px] text-gray-400 mt-1">تعيين مناطق لكل مستخدم</p>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="w-full mt-3 text-xs"
+                    onClick={() => toast("ميزة قيد التطوير")}
+                  >
+                    تعيين
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Security Tab */}
+          {activeTab === "security" && (
+            <div className="bg-white rounded-2xl border border-gray-200 p-6 space-y-4">
+              <h2 className="text-md font-bold text-gray-900 flex items-center gap-2">
+                <Shield className="h-5 w-5 text-red-600" />
+                إعدادات الأمان والباب
+              </h2>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="p-4 rounded-xl border border-gray-200 bg-white hover:border-green-200 transition-colors">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-green-50 text-green-600 mb-3">
+                    <DoorOpen className="h-5 w-5" />
+                  </div>
+                  <h3 className="font-bold text-gray-900 text-sm">فتح الباب</h3>
+                  <p className="text-[11px] text-gray-400 mt-1">فتح الباب عن بعد</p>
+                  <Button
+                    size="sm"
+                    onClick={handleUnlockDoor}
+                    loading={unlockingDoor}
+                    className="w-full mt-3 text-xs"
+                  >
+                    فتح الآن
+                  </Button>
+                </div>
+
+                <div className="p-4 rounded-xl border border-gray-200 bg-white hover:border-blue-200 transition-colors">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-blue-600 mb-3">
+                    <DoorClosed className="h-5 w-5" />
+                  </div>
+                  <h3 className="font-bold text-gray-900 text-sm">حالة الباب</h3>
+                  <p className="text-[11px] text-gray-400 mt-1">
+                    الحالة الحالية: {doorState || "غير معروف"}
+                  </p>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={fetchDoorState}
+                    className="w-full mt-3 text-xs"
+                  >
+                    تحديث الحالة
+                  </Button>
+                </div>
+
+                <div className="p-4 rounded-xl border border-gray-200 bg-white hover:border-purple-200 transition-colors">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-purple-50 text-purple-600 mb-3">
+                    <Clock className="h-5 w-5" />
+                  </div>
+                  <h3 className="font-bold text-gray-900 text-sm">تفعيل الساعة</h3>
+                  <p className="text-[11px] text-gray-400 mt-1">تفعيل عرض الساعة على الشاشة</p>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={handleEnableClock}
+                    loading={enablingClock}
+                    className="w-full mt-3 text-xs"
+                  >
+                    تفعيل
+                  </Button>
+                </div>
+
+                <div className="p-4 rounded-xl border border-gray-200 bg-white hover:border-orange-200 transition-colors">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-orange-50 text-orange-600 mb-3">
+                    <ShieldAlert className="h-5 w-5" />
+                  </div>
+                  <h3 className="font-bold text-gray-900 text-sm">مسح سجلات المشرفين</h3>
+                  <p className="text-[11px] text-gray-400 mt-1">مسح سجلات العمليات الخاصة</p>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={handleClearSuperLog}
+                    loading={clearingSuperLog}
+                    className="w-full mt-3 text-xs"
+                  >
+                    مسح
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Advanced Tab */}
+          {activeTab === "advanced" && (
+            <div className="bg-white rounded-2xl border border-gray-200 p-6 space-y-4">
+              <h2 className="text-md font-bold text-gray-900 flex items-center gap-2">
+                <Zap className="h-5 w-5 text-yellow-600" />
+                إعدادات متقدمة
+              </h2>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="p-4 rounded-xl border border-gray-200 bg-white hover:border-yellow-200 transition-colors">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-yellow-50 text-yellow-600 mb-3">
+                    <Bell className="h-5 w-5" />
+                  </div>
+                  <h3 className="font-bold text-gray-900 text-sm">تفعيل الوضع الفوري</h3>
+                  <p className="text-[11px] text-gray-400 mt-1">استقبال الأحداث في الوقت الفعلي</p>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={handleEnableRealtime}
+                    loading={enablingRealtime}
+                    className="w-full mt-3 text-xs"
+                  >
+                    تفعيل
+                  </Button>
+                </div>
+
+                <div className="p-4 rounded-xl border border-gray-200 bg-white hover:border-red-200 transition-colors">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-red-50 text-red-600 mb-3">
+                    <ShieldAlert className="h-5 w-5" />
+                  </div>
+                  <h3 className="font-bold text-gray-900 text-sm">حذف بيانات التسجيل</h3>
+                  <p className="text-[11px] text-gray-400 mt-1">حذف بصمات المستخدم</p>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="w-full mt-3 text-xs"
+                    onClick={() => toast("ميزة قيد التطوير")}
+                  >
+                    حذف
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
 
         </div>
 
@@ -411,7 +1056,7 @@ export default function DeviceSettingsPage({ params }: ParamsProps) {
             <div className="flex justify-between items-center border-b border-gray-100 pb-3">
               <h2 className="text-md font-bold text-gray-900 flex items-center gap-2">
                 <Info className="h-5 w-5 text-emerald-600" />
-                بيانات العتاد الحيّة (Hardware Specs)
+                بيانات الجهاز (Hardware Specs)
               </h2>
               <button
                 onClick={fetchParameters}
