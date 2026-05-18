@@ -11,15 +11,21 @@ export async function POST(_req: Request, { params }: Params) {
     if (!device)
       return NextResponse.json({ success: false, error: "الجهاز غير موجود" }, { status: 404 });
 
-    // Fetch attendance from device
-    const result = await zkService.getAttendance(device.ip, device.port);
-    if (!result.success || !result.data) {
+    // Fetch all data in a single connection
+    const result = await zkService.getSyncData(device.ip, device.port);
+
+    if (!result.success || !result.attendance) {
       return NextResponse.json({ success: false, error: result.error }, { status: 500 });
     }
 
+    console.log("============= بيانات البصمة القادمة من الجهاز =============");
+    console.dir(result.attendance, { depth: null, colors: true });
+    console.log(`إجمالي السجلات: ${result.attendance.length}`);
+    console.log("==========================================================");
+
     // Upsert records
     let inserted = 0;
-    for (const rec of result.data) {
+    for (const rec of result.attendance) {
       const existing = await prisma.attendanceRecord.findFirst({
         where: {
           deviceId: id,
@@ -53,9 +59,14 @@ export async function POST(_req: Request, { params }: Params) {
 
     return NextResponse.json({
       success: true,
-      message: `تم مزامنة ${inserted} سجل جديد من أصل ${result.data.length} سجل`,
-      total: result.data.length,
+      message: `تم مزامنة ${inserted} سجل جديد من أصل ${result.attendance.length} سجل`,
+      total: result.attendance.length,
       inserted,
+      data: result.attendance,
+      debug: {
+        info: result.info,
+        users: result.users,
+      }
     });
   } catch (error) {
     console.error(error);

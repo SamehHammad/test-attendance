@@ -10,9 +10,10 @@ interface StatCardProps {
   subtitle?: string;
   icon: LucideIcon;
   delay?: number;
+  gradient?: string;
 }
 
-export function StatCard({ title, value, subtitle, icon: Icon, delay = 0 }: StatCardProps) {
+export function StatCard({ title, value, subtitle, icon: Icon, delay = 0, gradient }: StatCardProps) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -30,8 +31,11 @@ export function StatCard({ title, value, subtitle, icon: Icon, delay = 0 }: Stat
             <p className="mt-1 text-xs text-gray-400">{subtitle}</p>
           )}
         </div>
-        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gray-50 border border-gray-100">
-          <Icon className="h-6 w-6 text-gray-700" />
+        <div className={cn(
+          "flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border",
+          gradient ? cn("bg-gradient-to-br text-white border-transparent", gradient) : "bg-gray-50 border-gray-100 text-gray-700"
+        )}>
+          <Icon className="h-6 w-6" />
         </div>
       </div>
     </motion.div>

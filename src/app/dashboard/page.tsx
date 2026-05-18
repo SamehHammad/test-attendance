@@ -47,12 +47,12 @@ export default function DashboardPage() {
         />
       </div>
 
-      <div className="rounded-2xl bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 p-6 shadow-sm mt-8">
+      <div className="rounded-2xl bg-white border border-gray-200 p-6 shadow-sm mt-8">
         <h2 className="text-lg font-bold mb-4">أهلاً بك في نظام ZK Attendance</h2>
-        <p className="text-gray-500 dark:text-gray-400">
+        <p className="text-gray-500">
           هذه لوحة القيادة الخاصة بنظام إدارة الحضور والانصراف. يمكنك من القائمة الجانبية:
         </p>
-        <ul className="list-disc list-inside mt-4 text-gray-600 dark:text-gray-300 space-y-2">
+        <ul className="list-disc list-inside mt-4 text-gray-600 space-y-2">
           <li>إضافة وإدارة أجهزة البصمة.</li>
           <li>مزامنة وسحب بيانات الحضور الانصراف من الأجهزة عبر الشبكة المحلية (IP & Port).</li>
           <li>عرض الموظفين المسجلين على الأجهزة.</li>

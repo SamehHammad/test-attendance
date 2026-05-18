@@ -34,8 +34,8 @@ export default function DevicesPage() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">أجهزة البصمة</h1>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">إدارة والاتصال بأجهزة ZKTeco</p>
+          <h1 className="text-2xl font-bold text-gray-900">أجهزة البصمة</h1>
+          <p className="text-sm text-gray-500 mt-1">إدارة والاتصال بأجهزة ZKTeco</p>
         </div>
         <Button onClick={() => { setSelectedDevice(undefined); setIsModalOpen(true); }}>
           <Plus className="h-4 w-4" /> إضافة جهاز
@@ -45,7 +45,7 @@ export default function DevicesPage() {
       {loading ? (
         <div className="p-8 text-center text-gray-500">جاري التحميل...</div>
       ) : devices.length === 0 ? (
-        <div className="text-center py-20 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800">
+        <div className="text-center py-20 bg-white rounded-2xl border border-gray-200">
           <p className="text-gray-500 mb-4">لا توجد أجهزة مضافة بعد</p>
           <Button onClick={() => setIsModalOpen(true)}>أضف أول جهاز</Button>
         </div>

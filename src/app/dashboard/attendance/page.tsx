@@ -19,23 +19,23 @@ export default function AttendancePage() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">سجلات الحضور</h1>
+          <h1 className="text-2xl font-bold text-gray-900">سجلات الحضور</h1>
           <p className="text-sm text-gray-500 mt-1">عرض جميع حركات الحضور والانصراف</p>
         </div>
       </div>
 
-      <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 overflow-hidden shadow-sm">
+      <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-sm">
         <div className="overflow-x-auto">
           <table className="w-full text-sm text-right">
-            <thead className="bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400 border-b border-gray-100 dark:border-gray-800">
+            <thead className="bg-gray-100 text-gray-800 border-b border-gray-200">
               <tr>
-                <th className="px-6 py-4 font-medium">رقم البصمة</th>
-                <th className="px-6 py-4 font-medium">وقت السجل</th>
-                <th className="px-6 py-4 font-medium">نوع الحركة</th>
-                <th className="px-6 py-4 font-medium">الجهاز</th>
+                <th className="px-6 py-4 font-bold">رقم البصمة</th>
+                <th className="px-6 py-4 font-bold">وقت السجل</th>
+                <th className="px-6 py-4 font-bold">نوع الحركة</th>
+                <th className="px-6 py-4 font-bold">الجهاز</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+            <tbody className="divide-y divide-gray-100">
               {loading ? (
                 <tr>
                   <td colSpan={4} className="px-6 py-8 text-center text-gray-500">
@@ -50,17 +50,17 @@ export default function AttendancePage() {
                 </tr>
               ) : (
                 records.map((rec) => (
-                  <tr key={rec.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
-                    <td className="px-6 py-4 font-medium text-gray-900 dark:text-gray-100">{rec.deviceUserId}</td>
-                    <td className="px-6 py-4 font-mono text-gray-600 dark:text-gray-300" dir="ltr">
+                  <tr key={rec.id} className="hover:bg-gray-50 transition-colors">
+                    <td className="px-6 py-4 font-bold text-gray-900">{rec.deviceUserId}</td>
+                    <td className="px-6 py-4 font-mono font-semibold text-gray-800" dir="ltr">
                       {formatDateTime(rec.recordTime)}
                     </td>
                     <td className="px-6 py-4">
-                      <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${getAttendanceTypeBadgeColor(rec.type)}`}>
+                      <span className={`px-3 py-1.5 rounded-full text-xs font-bold ${getAttendanceTypeBadgeColor(rec.type)}`}>
                         {getAttendanceTypeLabel(rec.type)}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-gray-500">
+                    <td className="px-6 py-4 font-medium text-gray-700">
                       {rec.device?.name}
                     </td>
                   </tr>
