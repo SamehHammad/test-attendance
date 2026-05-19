@@ -8,6 +8,9 @@ export async function POST(
 ) {
   try {
     const { id } = await params;
+    const body = await request.json().catch(() => ({}));
+    const clearDb = !!body.clearDb;
+
     const device = await prisma.device.findUnique({
       where: { id },
     });
@@ -19,9 +22,17 @@ export async function POST(
     const result = await zkService.clearData(device.ip, device.port);
 
     if (result.success) {
+      if (clearDb) {
+        await prisma.attendanceRecord.deleteMany({
+          where: { deviceId: id }
+        });
+        await prisma.employee.deleteMany({
+          where: { deviceId: id }
+        });
+      }
       return NextResponse.json({ 
         success: true, 
-        message: "تم مسح جميع البيانات بنجاح" 
+        message: "تم مسح جميع البيانات بنجاح" + (clearDb ? " وحذفها من قاعدة البيانات المحلية" : "")
       });
     } else {
       return NextResponse.json({ success: false, error: result.error }, { status: 400 });

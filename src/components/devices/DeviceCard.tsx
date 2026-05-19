@@ -96,21 +96,8 @@ export function DeviceCard({ device, onEdit, onDelete, onRefresh, index }: Devic
       transition={{ duration: 0.35, delay: index * 0.07 }}
       className="group relative rounded-2xl bg-white border border-gray-200 p-5 shadow-sm hover:shadow-lg hover:border-blue-100 transition-all duration-300"
     >
-      {/* Status Indicator */}
-      <div className="absolute top-4 left-4">
-        <span className="relative flex h-2.5 w-2.5">
-          {device.isActive && (
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-          )}
-          <span
-            className={`relative inline-flex h-2.5 w-2.5 rounded-full ${device.isActive ? "bg-emerald-500" : "bg-gray-300"
-              }`}
-          />
-        </span>
-      </div>
-
       {/* Menu & Settings */}
-      <div className="absolute top-3 right-3 flex items-center gap-1">
+      <div className="absolute top-3 left-3 flex items-center gap-1">
         <Link
           href={`/dashboard/devices/${device.id}`}
           title="التحكم المتقدم وضبط العتاد"
@@ -129,7 +116,7 @@ export function DeviceCard({ device, onEdit, onDelete, onRefresh, index }: Devic
           {menuOpen && (
             <>
               <div className="fixed inset-0 z-40" onClick={() => setMenuOpen(false)} />
-              <div className="absolute right-0 top-full mt-1 z-50 w-36 rounded-xl border border-gray-200 bg-white shadow-2xl py-1 flex flex-col overflow-hidden">
+              <div className="absolute left-0 top-full mt-1 z-50 w-36 rounded-xl border border-gray-200 bg-white shadow-2xl py-1 flex flex-col overflow-hidden">
                 <button
                   onClick={(e) => { e.stopPropagation(); onEdit(); setMenuOpen(false); }}
                   className="flex w-full items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 text-right transition-colors"
@@ -153,8 +140,20 @@ export function DeviceCard({ device, onEdit, onDelete, onRefresh, index }: Devic
 
       {/* Icon + Name */}
       <div className="mb-5 flex items-center gap-3 mt-1">
-        <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-50 border border-blue-100/50 group-hover:bg-blue-100 group-hover:scale-105 transition-all duration-300">
+        <div className="relative flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-50 border border-blue-100/50 group-hover:bg-blue-100 group-hover:scale-105 transition-all duration-300">
           <Monitor className="h-6 w-6 text-blue-600" />
+          
+          {/* Status Indicator */}
+          <span className="absolute -top-1 -left-1 flex h-3 w-3">
+            {device.isActive && (
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+            )}
+            <span
+              className={`relative inline-flex h-3 w-3 rounded-full border-2 border-white ${
+                device.isActive ? "bg-emerald-500" : "bg-gray-300"
+              }`}
+            />
+          </span>
         </div>
         <div className="flex flex-col gap-1.5">
           <h3 className="font-semibold text-gray-900 text-sm leading-none">

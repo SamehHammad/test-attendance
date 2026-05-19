@@ -21,9 +21,27 @@ export async function POST(
     const result = await zkService.setUser(device.ip, device.port, user);
 
     if (result.success) {
+      // Sync/upsert Employee database record
+      await prisma.employee.upsert({
+        where: {
+          deviceUserId_deviceId: {
+            deviceUserId: String(user.userId),
+            deviceId: id
+          }
+        },
+        update: {
+          name: user.name || `موظف ${user.userId}`,
+        },
+        create: {
+          deviceUserId: String(user.userId),
+          name: user.name || `موظف ${user.userId}`,
+          deviceId: id
+        }
+      });
+
       return NextResponse.json({ 
         success: true, 
-        message: "تم تعيين معلومات المستخدم بنجاح" 
+        message: "تم تعيين معلومات المستخدم بنجاح ومزامنتها بقاعدة البيانات" 
       });
     } else {
       return NextResponse.json({ success: false, error: result.error }, { status: 400 });

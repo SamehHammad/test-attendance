@@ -1,12 +1,15 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { zkService } from "@/services/zk.service";
 import { prisma } from "@/lib/prisma";
 
 type Params = { params: Promise<{ id: string }> };
 
-export async function POST(_req: Request, { params }: Params) {
+export async function POST(req: NextRequest, { params }: Params) {
   const { id } = await params;
   try {
+    const body = await req.json().catch(() => ({}));
+    const clearDb = !!body.clearDb;
+
     const device = await prisma.device.findUnique({ where: { id } });
     if (!device) {
       return NextResponse.json({ success: false, error: "الجهاز غير موجود" }, { status: 404 });
@@ -17,11 +20,15 @@ export async function POST(_req: Request, { params }: Params) {
       return NextResponse.json({ success: false, error: result.error }, { status: 500 });
     }
 
-    // Also clear them in the DB if requested? Usually we only clear the device's logs
-    // to free up memory on the hardware, keeping them in PostgreSQL DB.
+    if (clearDb) {
+      await prisma.attendanceRecord.deleteMany({
+        where: { deviceId: id }
+      });
+    }
+
     return NextResponse.json({
       success: true,
-      message: "تم تفريغ ذاكرة السجلات على الجهاز بنجاح",
+      message: "تم تفريغ ذاكرة السجلات على الجهاز بنجاح" + (clearDb ? " وحذفها من قاعدة البيانات المحلية" : ""),
     });
   } catch (error) {
     console.error(error);

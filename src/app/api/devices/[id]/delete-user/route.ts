@@ -8,7 +8,9 @@ export async function POST(
 ) {
   try {
     const { id } = await params;
-    const { userId } = await request.json();
+    const body = await request.json().catch(() => ({}));
+    const userId = body.userId;
+    const clearDb = body.clearDb;
 
     if (!userId) {
       return NextResponse.json({ success: false, error: "معرف المستخدم مطلوب" }, { status: 400 });
@@ -25,9 +27,17 @@ export async function POST(
     const result = await zkService.deleteUser(device.ip, device.port, userId);
 
     if (result.success) {
+      if (clearDb !== false) {
+        await prisma.employee.deleteMany({
+          where: {
+            deviceUserId: userId,
+            deviceId: id
+          }
+        });
+      }
       return NextResponse.json({ 
         success: true, 
-        message: "تم حذف المستخدم بنجاح" 
+        message: "تم حذف المستخدم بنجاح" + (clearDb !== false ? " وحذفه من قاعدة البيانات المحلية" : "")
       });
     } else {
       return NextResponse.json({ success: false, error: result.error }, { status: 400 });

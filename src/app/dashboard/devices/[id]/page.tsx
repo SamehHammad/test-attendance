@@ -60,6 +60,76 @@ export default function DeviceSettingsPage({ params }: ParamsProps) {
   // Tab state
   const [activeTab, setActiveTab] = useState("general");
 
+  // Dialog modal states
+  const [addUserOpen, setAddUserOpen] = useState(false);
+  const [deleteUserOpen, setDeleteUserOpen] = useState(false);
+  const [toggleUserOpen, setToggleUserOpen] = useState(false);
+  const [userGroupOpen, setUserGroupOpen] = useState(false);
+  const [timezoneOpen, setTimezoneOpen] = useState(false);
+  const [userTimezonesOpen, setUserTimezonesOpen] = useState(false);
+  const [deleteEnrollOpen, setDeleteEnrollOpen] = useState(false);
+
+  // Additional options for reboot / DB sync
+  const [addUserReboot, setAddUserReboot] = useState(false);
+  const [delUserClearDb, setDelUserClearDb] = useState(true);
+  const [delUserReboot, setDelUserReboot] = useState(false);
+  const [toggleUserReboot, setToggleUserReboot] = useState(false);
+  const [timezoneReboot, setTimezoneReboot] = useState(true);
+  const [userTimezonesReboot, setUserTimezonesReboot] = useState(true);
+  const [deleteEnrollReboot, setDeleteEnrollReboot] = useState(false);
+
+  // Custom Action Confirmation Dialog State
+  const [confirmConfig, setConfirmConfig] = useState<{
+    isOpen: boolean;
+    title: string;
+    description: string;
+    icon: React.ReactNode;
+    actionKey: string;
+    loading: boolean;
+    options?: Array<{
+      key: string;
+      label: string;
+      description?: string;
+      defaultValue: boolean;
+    }>;
+    onConfirm: (selectedOptions: Record<string, boolean>) => Promise<void>;
+  } | null>(null);
+
+  // Selected options state for the custom confirmation dialog
+  const [dialogOptions, setDialogOptions] = useState<Record<string, boolean>>({});
+  const [actionProgress, setActionProgress] = useState<Array<{
+    key: string;
+    label: string;
+    status: "pending" | "running" | "success" | "error";
+  }>>([]);
+
+  // Form states
+  const [newUser, setNewUser] = useState({ uid: "", userId: "", name: "", password: "", role: "0", cardno: "" });
+  const [delUserId, setDelUserId] = useState("");
+  const [toggleUser, setToggleUser] = useState({ userId: "", enabled: true });
+  const [userGroup, setUserGroup] = useState({ userSn: "", groupNumber: "" });
+  const [timezoneForm, setTimezoneForm] = useState({
+    timezoneIndex: "1",
+    sunday: "08:00 TO 17:00",
+    monday: "08:00 TO 17:00",
+    tuesday: "08:00 TO 17:00",
+    wednesday: "08:00 TO 17:00",
+    thursday: "08:00 TO 17:00",
+    friday: "00:00 TO 00:00",
+    saturday: "00:00 TO 00:00"
+  });
+  const [userTimezonesForm, setUserTimezonesForm] = useState({ userId: "", timezones: "" });
+  const [deleteEnrollForm, setDeleteEnrollForm] = useState({ userId: "", fingerIndex: "0" });
+
+  // Action submitting states
+  const [submittingAddUser, setSubmittingAddUser] = useState(false);
+  const [submittingDelUser, setSubmittingDelUser] = useState(false);
+  const [submittingToggleUser, setSubmittingToggleUser] = useState(false);
+  const [submittingUserGroup, setSubmittingUserGroup] = useState(false);
+  const [submittingTimezone, setSubmittingTimezone] = useState(false);
+  const [submittingUserTimezones, setSubmittingUserTimezones] = useState(false);
+  const [submittingDeleteEnroll, setSubmittingDeleteEnroll] = useState(false);
+
   const fetchDevice = useCallback(async () => {
     setLoading(true);
     try {
@@ -181,152 +251,251 @@ export default function DeviceSettingsPage({ params }: ParamsProps) {
         toast.success(res.data.message);
       } else {
         toast.error(res.data.error);
-      }
-    } catch {
-      toast.error("فشل في مزامنة وقت الجهاز");
-    } finally {
-      setSyncingTime(false);
+    const triggerCriticalAction = (actionKey: string) => {
+    let title = "";
+    let description = "";
+    let icon = <ShieldAlert className="h-10 w-10 text-red-500" />;
+    let options: Array<{ key: string; label: string; description?: string; defaultValue: boolean }> = [];
+    
+    switch (actionKey) {
+      case "clear-data":
+        title = "مسح جميع البيانات من الجهاز";
+        description = "⚠️ تحذير شديد: سيتم مسح كافة بصمات الموظفين والمستخدمين وسجلات الحضور والإنصراف المخزنة في ذاكرة البصمة بشكل نهائي ولا يمكن التراجع عن هذا الإجراء.";
+        icon = <ShieldAlert className="h-10 w-10 text-rose-500 animate-pulse" />;
+        options = [
+          { key: "clearDb", label: "حذف البيانات أيضاً من قاعدة بيانات السيرفر (PostgreSQL)", description: "سيتم حذف الموظفين وسجل الحركات الخاص بهذا الجهاز نهائياً من السيرفر", defaultValue: false },
+          { key: "reboot", label: "إعادة تشغيل الجهاز (Reboot) تلقائياً لتصفير العدادات", description: "يوصى به لتحديث شاشة البصمة ومسح الذاكرة المؤقتة للعتاد", defaultValue: true }
+        ];
+        break;
+      case "clear-logs":
+        title = "تفريغ ذاكرة سجلات الحضور والانصراف";
+        description = "⚠️ تحذير: سيتم حذف جميع حركات الحضور والانصراف المخزنة في ذاكرة الجهاز لتوفير مساحة. لن يتم حذف المستخدمين أو البصمات.";
+        icon = <Database className="h-10 w-10 text-amber-500" />;
+        options = [
+          { key: "clearDb", label: "حذف الحركات أيضاً من قاعدة بيانات السيرفر (PostgreSQL)", description: "سيتم إفراغ سجل الحركات المخزن محلياً على السيرفر لهذا الجهاز", defaultValue: false },
+          { key: "reboot", label: "إعادة تشغيل الجهاز (Reboot) تلقائياً لتحديث العدادات", description: "يوصى به لتحديث عداد الحركات المعروض على شاشة جهاز البصمة", defaultValue: true }
+        ];
+        break;
+      case "reboot":
+        title = "إعادة تشغيل جهاز البصمة";
+        description = "هل أنت متأكد من إعادة تشغيل جهاز البصمة؟ سيفقد الجهاز الاتصال بالشبكة لعدة دقائق ثم يعود للعمل تلقائياً.";
+        icon = <RefreshCw className="h-10 w-10 text-rose-500 animate-spin" />;
+        break;
+      case "clear-admins":
+        title = "إلغاء صلاحيات المشرفين";
+        description = "سيتم تحويل جميع المشرفين والمدراء الحاليين على جهاز البصمة إلى مستخدمين عاديين. هذا الإجراء يسمح لك بدخول القائمة البرمجية للجهاز مباشرة دون قفل.";
+        icon = <Shield className="h-10 w-10 text-indigo-500" />;
+        options = [
+          { key: "reboot", label: "إعادة تشغيل جهاز البصمة تلقائياً لتطبيق الصلاحيات فوراً", defaultValue: true }
+        ];
+        break;
+      case "power-off":
+        title = "إيقاف تشغيل جهاز البصمة";
+        description = "⚠️ تحذير: سيتم إيقاف تشغيل جهاز البصمة نهائياً عن بعد. سيتعين على شخص ما الضغط على زر التشغيل في الجهاز يدوياً لإعادة تشغيله.";
+        icon = <Power className="h-10 w-10 text-red-600 animate-pulse" />;
+        break;
+      case "disable-device":
+        title = "تعطيل جهاز البصمة مؤقتاً";
+        description = "سيتم تعطيل إمكانية تسجيل الحضور والإنصراف أو استخدام شاشة الجهاز مؤقتاً. لن يقبل الجهاز بصمات الموظفين حتى يتم تفعيله مجدداً.";
+        icon = <Lock className="h-10 w-10 text-orange-500" />;
+        break;
+      case "enable-device":
+        title = "تفعيل جهاز البصمة";
+        description = "سيتم إعادة تشغيل العمليات وقبول بصمات وحركات الموظفين على جهاز البصمة.";
+        icon = <Unlock className="h-10 w-10 text-green-500" />;
+        break;
+      case "refresh-data":
+        title = "تحديث البيانات بالجهاز";
+        description = "سيتم تحديث وإعادة تهيئة الذاكرة التخزينية لجهاز البصمة وتحديث البيانات المحلية فيه.";
+        icon = <RefreshCw className="h-10 w-10 text-blue-500" />;
+        options = [
+          { key: "reboot", label: "إعادة تشغيل الجهاز بعد التحديث", defaultValue: false }
+        ];
+        break;
+      case "clear-super-log":
+        title = "مسح سجل المشرفين";
+        description = "⚠️ تحذير: سيتم مسح سجل العمليات البرمجية والإدارية المخزن على جهاز البصمة نهائياً.";
+        icon = <ClipboardList className="h-10 w-10 text-purple-500" />;
+        break;
+      case "delete-device":
+        title = "حذف جهاز البصمة من النظام";
+        description = "⚠️ تحذير شديد: سيتم حذف هذا الجهاز تماماً من النظام وقاعدة البيانات المحلية. لن يؤدي هذا إلى مسح أي بيانات من على الجهاز الفعلي، ولكن لن تتمكن من إدارته من هنا مجدداً.";
+        icon = <Trash2 className="h-10 w-10 text-rose-600 animate-pulse" />;
+        break;
+      default:
+        return;
     }
+
+    const defaultOptions: Record<string, boolean> = {};
+    options.forEach(o => {
+      defaultOptions[o.key] = o.defaultValue;
+    });
+    setDialogOptions(defaultOptions);
+    setActionProgress([]);
+
+    setConfirmConfig({
+      isOpen: true,
+      title,
+      description,
+      icon,
+      actionKey,
+      loading: false,
+      options,
+      onConfirm: async (selectedOptions) => {
+        await executeAction(actionKey, selectedOptions);
+      }
+    });
   };
 
-  const handleClearLogs = async () => {
-    if (!confirm("⚠️ تحذير: هل أنت متأكد من مسح جميع السجلات المخزنة بذاكرة جهاز البصمة؟ لا يمكن التراجع عن هذا الإجراء.")) return;
-    setClearingLogs(true);
+  const executeAction = async (actionKey: string, options: Record<string, boolean>) => {
+    const steps: Array<{ key: string; label: string; status: "pending" | "running" | "success" | "error" }> = [];
+    
+    let mainLabel = "";
+    let mainApi = "";
+    let mainPayload: any = {};
+    
+    switch (actionKey) {
+      case "clear-data":
+        mainLabel = "مسح البيانات من جهاز البصمة";
+        mainApi = `/api/devices/${id}/clear-data`;
+        mainPayload = { clearDb: !!options.clearDb };
+        steps.push({ key: "main", label: mainLabel, status: "pending" });
+        if (options.clearDb) {
+          steps.push({ key: "db", label: "حذف البيانات من قاعدة بيانات السيرفر", status: "pending" });
+        }
+        if (options.reboot) {
+          steps.push({ key: "reboot", label: "إعادة تشغيل جهاز البصمة لتطبيق التغييرات", status: "pending" });
+        }
+        break;
+      case "clear-logs":
+        mainLabel = "مسح السجلات من جهاز البصمة";
+        mainApi = `/api/devices/${id}/clear-logs`;
+        mainPayload = { clearDb: !!options.clearDb };
+        steps.push({ key: "main", label: mainLabel, status: "pending" });
+        if (options.clearDb) {
+          steps.push({ key: "db", label: "حذف السجلات من قاعدة بيانات السيرفر", status: "pending" });
+        }
+        if (options.reboot) {
+          steps.push({ key: "reboot", label: "إعادة تشغيل جهاز البصمة لتحديث العدادات", status: "pending" });
+        }
+        break;
+      case "reboot":
+        mainLabel = "إرسال أمر إعادة التشغيل للجهاز";
+        mainApi = `/api/devices/${id}/reboot`;
+        steps.push({ key: "main", label: mainLabel, status: "pending" });
+        break;
+      case "clear-admins":
+        mainLabel = "إلغاء صلاحيات المشرفين من الجهاز";
+        mainApi = `/api/devices/${id}/clear-admins`;
+        steps.push({ key: "main", label: mainLabel, status: "pending" });
+        if (options.reboot) {
+          steps.push({ key: "reboot", label: "إعادة تشغيل جهاز البصمة لتفعيل الصلاحيات", status: "pending" });
+        }
+        break;
+      case "power-off":
+        mainLabel = "إرسال أمر إيقاف التشغيل للجهاز";
+        mainApi = `/api/devices/${id}/power-off`;
+        steps.push({ key: "main", label: mainLabel, status: "pending" });
+        break;
+      case "disable-device":
+        mainLabel = "إرسال أمر تعطيل العمليات للجهاز";
+        mainApi = `/api/devices/${id}/disable-device`;
+        steps.push({ key: "main", label: mainLabel, status: "pending" });
+        break;
+      case "enable-device":
+        mainLabel = "إرسال أمر تفعيل العمليات للجهاز";
+        mainApi = `/api/devices/${id}/enable-device`;
+        steps.push({ key: "main", label: mainLabel, status: "pending" });
+        break;
+      case "refresh-data":
+        mainLabel = "تحديث مخزن البيانات بالجهاز";
+        mainApi = `/api/devices/${id}/refresh-data`;
+        steps.push({ key: "main", label: mainLabel, status: "pending" });
+        if (options.reboot) {
+          steps.push({ key: "reboot", label: "إعادة تشغيل جهاز البصمة", status: "pending" });
+        }
+        break;
+      case "clear-super-log":
+        mainLabel = "مسح سجل المشرفين من الجهاز";
+        mainApi = `/api/devices/${id}/clear-super-log`;
+        steps.push({ key: "main", label: mainLabel, status: "pending" });
+        break;
+      case "delete-device":
+        mainLabel = "حذف الجهاز من قاعدة بيانات السيرفر";
+        mainApi = `/api/devices/${id}`;
+        steps.push({ key: "main", label: mainLabel, status: "pending" });
+        break;
+    }
+
+    setConfirmConfig(prev => prev ? { ...prev, loading: true } : null);
+    setActionProgress(steps);
+
+    const updateStepStatus = (key: string, status: "pending" | "running" | "success" | "error") => {
+      setActionProgress(prev => prev.map(s => s.key === key ? { ...s, status } : s));
+    };
+
     try {
-      const res = await axios.post(`/api/devices/${id}/clear-logs`);
-      if (res.data.success) {
-        toast.success(res.data.message);
+      updateStepStatus("main", "running");
+      const method = actionKey === "delete-device" ? "delete" : "post";
+      const mainRes = await (method === "delete" ? axios.delete(mainApi) : axios.post(mainApi, mainPayload));
+      
+      if (mainRes.data.success) {
+        updateStepStatus("main", "success");
+        if (steps.some(s => s.key === "db")) {
+          updateStepStatus("db", "success");
+        }
+        
+        if (actionKey === "delete-device") {
+          toast.success("تم حذف الجهاز بنجاح");
+          router.push("/dashboard/devices");
+          return;
+        }
+
         fetchDevice();
+        if (actionKey === "disable-device" || actionKey === "enable-device") {
+          fetchDeviceState();
+        }
       } else {
-        toast.error(res.data.error);
+        updateStepStatus("main", "error");
+        if (steps.some(s => s.key === "db")) {
+          updateStepStatus("db", "error");
+        }
+        toast.error(`❌ فشل الإجراء الأساسي: ${mainRes.data.error}`);
+        setConfirmConfig(prev => prev ? { ...prev, loading: false } : null);
+        return;
       }
-    } catch {
-      toast.error("فشل في مسح سجلات الجهاز");
+
+      if (options.reboot && steps.some(s => s.key === "reboot")) {
+        updateStepStatus("reboot", "running");
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        const rebootRes = await axios.post(`/api/devices/${id}/reboot`);
+        if (rebootRes.data.success) {
+          updateStepStatus("reboot", "success");
+          toast.success("✅ تم تنفيذ جميع العمليات المترابطة وإعادة تشغيل الجهاز بنجاح");
+        } else {
+          updateStepStatus("reboot", "error");
+          toast.error(`⚠️ فشل إعادة تشغيل الجهاز: ${rebootRes.data.error}`);
+        }
+      } else {
+        toast.success("✅ تم تنفيذ العملية بنجاح");
+      }
+    } catch (err: any) {
+      console.error(err);
+      setActionProgress(prev => prev.map(s => s.status === "running" ? { ...s, status: "error" } : s));
+      toast.error("❌ حدث خطأ غير متوقع أثناء الاتصال بالخادم");
     } finally {
-      setClearingLogs(false);
+      setConfirmConfig(prev => prev ? { ...prev, loading: false } : null);
     }
   };
 
-  const handleReboot = async () => {
-    if (!confirm(`هل أنت متأكد من إعادة تشغيل جهاز "${device.name}"؟ سيفقد الاتصال لدقائق.`)) return;
-    setRebooting(true);
-    try {
-      const res = await axios.post(`/api/devices/${id}/reboot`);
-      if (res.data.success) {
-        toast.success(res.data.message);
-      } else {
-        toast.error(res.data.error);
-      }
-    } catch {
-      toast.error("فشل في إعادة تشغيل الجهاز");
-    } finally {
-      setRebooting(false);
-    }
-  };
-
-  const handleDisableDevice = async () => {
-    if (!confirm("هل أنت متأكد من تعطيل الجهاز؟ سيتم إيقاف جميع العمليات.")) return;
-    setDisabling(true);
-    try {
-      const res = await axios.post(`/api/devices/${id}/disable-device`);
-      if (res.data.success) {
-        toast.success(res.data.message);
-        fetchDeviceState();
-      } else {
-        toast.error(res.data.error);
-      }
-    } catch {
-      toast.error("فشل في تعطيل الجهاز");
-    } finally {
-      setDisabling(false);
-    }
-  };
-
-  const handleEnableDevice = async () => {
-    setEnabling(true);
-    try {
-      const res = await axios.post(`/api/devices/${id}/enable-device`);
-      if (res.data.success) {
-        toast.success(res.data.message);
-        fetchDeviceState();
-      } else {
-        toast.error(res.data.error);
-      }
-    } catch {
-      toast.error("فشل في تفعيل الجهاز");
-    } finally {
-      setEnabling(false);
-    }
-  };
-
-  const handlePowerOff = async () => {
-    if (!confirm("⚠️ تحذير: هل أنت متأكد من إيقاف تشغيل الجهاز؟ سيتم إيقافه بالكامل.")) return;
-    setPoweringOff(true);
-    try {
-      const res = await axios.post(`/api/devices/${id}/power-off`);
-      if (res.data.success) {
-        toast.success(res.data.message);
-      } else {
-        toast.error(res.data.error);
-      }
-    } catch {
-      toast.error("فشل في إيقاف تشغيل الجهاز");
-    } finally {
-      setPoweringOff(false);
-    }
-  };
-
-  const handleClearData = async () => {
-    if (!confirm("⚠️ تحذير شديد: هل أنت متأكد من مسح جميع البيانات؟ سيتم حذف المستخدمين والسجلات.")) return;
-    setClearingData(true);
-    try {
-      const res = await axios.post(`/api/devices/${id}/clear-data`);
-      if (res.data.success) {
-        toast.success(res.data.message);
-        fetchDevice();
-      } else {
-        toast.error(res.data.error);
-      }
-    } catch {
-      toast.error("فشل في مسح البيانات");
-    } finally {
-      setClearingData(false);
-    }
-  };
-
-  const handleRefreshData = async () => {
-    setRefreshingData(true);
-    try {
-      const res = await axios.post(`/api/devices/${id}/refresh-data`);
-      if (res.data.success) {
-        toast.success(res.data.message);
-      } else {
-        toast.error(res.data.error);
-      }
-    } catch {
-      toast.error("فشل في تحديث البيانات");
-    } finally {
-      setRefreshingData(false);
-    }
-  };
-
-  const handleClearAdmins = async () => {
-    if (!confirm("⚠️ تحذير: هل أنت متأكد من مسح جميع المشرفين؟ سيتم تحويل جميع المستخدمين إلى مستخدمين عاديين.")) return;
-    setClearingAdmins(true);
-    try {
-      const res = await axios.post(`/api/devices/${id}/clear-admins`);
-      if (res.data.success) {
-        toast.success(res.data.message);
-      } else {
-        toast.error(res.data.error);
-      }
-    } catch {
-      toast.error("فشل في مسح المشرفين");
-    } finally {
-      setClearingAdmins(false);
-    }
-  };
-
+  const handleClearLogs = async () => { triggerCriticalAction("clear-logs"); };
+  const handleReboot = async () => { triggerCriticalAction("reboot"); };
+  const handleDisableDevice = async () => { triggerCriticalAction("disable-device"); };
+  const handleEnableDevice = async () => { triggerCriticalAction("enable-device"); };
+  const handlePowerOff = async () => { triggerCriticalAction("power-off"); };
+  const handleClearData = async () => { triggerCriticalAction("clear-data"); };
+  const handleRefreshData = async () => { triggerCriticalAction("refresh-data"); };
+  const handleClearAdmins = async () => { triggerCriticalAction("clear-admins"); };
   const handleEnableClock = async () => {
     setEnablingClock(true);
     try {
@@ -342,7 +511,6 @@ export default function DeviceSettingsPage({ params }: ParamsProps) {
       setEnablingClock(false);
     }
   };
-
   const handleUnlockDoor = async () => {
     setUnlockingDoor(true);
     try {
@@ -359,7 +527,6 @@ export default function DeviceSettingsPage({ params }: ParamsProps) {
       setUnlockingDoor(false);
     }
   };
-
   const handleEnableRealtime = async () => {
     setEnablingRealtime(true);
     try {
@@ -375,9 +542,8 @@ export default function DeviceSettingsPage({ params }: ParamsProps) {
       setEnablingRealtime(false);
     }
   };
-
-  const handleClearSuperLog = async () => {
-    if (!confirm("⚠️ تحذير: هل أنت متأكد من مسح سجلات المشرفين؟")) return;
+  const handleClearSuperLog = async () => { triggerCriticalAction("clear-super-log"); };
+  const handleDelete = async () => { triggerCriticalAction("delete-device"); };�كد من مسح سجلات المشرفين؟")) return;
     setClearingSuperLog(true);
     try {
       const res = await axios.post(`/api/devices/${id}/clear-super-log`);
@@ -401,6 +567,209 @@ export default function DeviceSettingsPage({ params }: ParamsProps) {
       router.push("/dashboard/devices");
     } catch {
       toast.error("فشل في حذف الجهاز");
+    }
+  };
+
+  const handleAddUser = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newUser.uid || !newUser.userId || !newUser.name) {
+      toast.error("يرجى ملء جميع الحقول الإلزامية (الرقم التسلسلي، معرف المستخدم، الاسم)");
+      return;
+    }
+    setSubmittingAddUser(true);
+    try {
+      const res = await axios.post(`/api/devices/${id}/set-user`, {
+        uid: parseInt(newUser.uid),
+        userId: newUser.userId,
+        name: newUser.name,
+        password: newUser.password || undefined,
+        role: parseInt(newUser.role),
+        cardno: newUser.cardno || undefined,
+      });
+      if (res.data.success) {
+        toast.success(res.data.message || "تمت إضافة المستخدم بنجاح");
+        setAddUserOpen(false);
+        setNewUser({ uid: "", userId: "", name: "", password: "", role: "0", cardno: "" });
+        fetchDevice();
+      } else {
+        toast.error(res.data.error || "فشل إضافة المستخدم");
+      }
+    } catch (err: unknown) {
+      const error = err as { response?: { data?: { error?: string } } };
+      toast.error(error.response?.data?.error || "فشل في إضافة المستخدم");
+    } finally {
+      setSubmittingAddUser(false);
+    }
+  };
+
+  const handleDeleteUser = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!delUserId) {
+      toast.error("يرجى إدخال معرف المستخدم");
+      return;
+    }
+    setSubmittingDelUser(true);
+    try {
+      const res = await axios.post(`/api/devices/${id}/delete-user`, { userId: delUserId });
+      if (res.data.success) {
+        toast.success(res.data.message || "تم حذف المستخدم بنجاح");
+        setDeleteUserOpen(false);
+        setDelUserId("");
+        fetchDevice();
+      } else {
+        toast.error(res.data.error || "فشل حذف المستخدم");
+      }
+    } catch (err: unknown) {
+      const error = err as { response?: { data?: { error?: string } } };
+      toast.error(error.response?.data?.error || "فشل في حذف المستخدم");
+    } finally {
+      setSubmittingDelUser(false);
+    }
+  };
+
+  const handleToggleUser = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!toggleUser.userId) {
+      toast.error("يرجى إدخال معرف المستخدم");
+      return;
+    }
+    setSubmittingToggleUser(true);
+    try {
+      const res = await axios.post(`/api/devices/${id}/enable-user`, {
+        userId: toggleUser.userId,
+        enabled: toggleUser.enabled
+      });
+      if (res.data.success) {
+        toast.success(res.data.message || "تم تغيير حالة المستخدم بنجاح");
+        setToggleUserOpen(false);
+        setToggleUser({ userId: "", enabled: true });
+      } else {
+        toast.error(res.data.error || "فشل تغيير صلاحية المستخدم");
+      }
+    } catch (err: unknown) {
+      const error = err as { response?: { data?: { error?: string } } };
+      toast.error(error.response?.data?.error || "فشل في تغيير صلاحية المستخدم");
+    } finally {
+      setSubmittingToggleUser(false);
+    }
+  };
+
+  const handleSetUserGroup = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!userGroup.userSn || !userGroup.groupNumber) {
+      toast.error("يرجى ملء جميع الحقول");
+      return;
+    }
+    setSubmittingUserGroup(true);
+    try {
+      const res = await axios.post(`/api/devices/${id}/user-group`, {
+        userSn: parseInt(userGroup.userSn),
+        groupNumber: parseInt(userGroup.groupNumber)
+      });
+      if (res.data.success) {
+        toast.success(res.data.message || "تم تعيين المجموعة بنجاح");
+        setUserGroupOpen(false);
+        setUserGroup({ userSn: "", groupNumber: "" });
+      } else {
+        toast.error(res.data.error || "فشل تعيين مجموعة المستخدم");
+      }
+    } catch (err: unknown) {
+      const error = err as { response?: { data?: { error?: string } } };
+      toast.error(error.response?.data?.error || "فشل في تعيين مجموعة المستخدم");
+    } finally {
+      setSubmittingUserGroup(false);
+    }
+  };
+
+  const handleSetTimezone = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSubmittingTimezone(true);
+    try {
+      const res = await axios.post(`/api/devices/${id}/timezone-info`, {
+        timezoneIndex: parseInt(timezoneForm.timezoneIndex),
+        sunday: timezoneForm.sunday,
+        monday: timezoneForm.monday,
+        tuesday: timezoneForm.tuesday,
+        wednesday: timezoneForm.wednesday,
+        thursday: timezoneForm.thursday,
+        friday: timezoneForm.friday,
+        saturday: timezoneForm.saturday
+      });
+      if (res.data.success) {
+        toast.success(res.data.message || "تم حفظ المنطقة الزمنية بنجاح");
+        setTimezoneOpen(false);
+      } else {
+        toast.error(res.data.error || "فشل تعيين المنطقة الزمنية");
+      }
+    } catch (err: unknown) {
+      const error = err as { response?: { data?: { error?: string } } };
+      toast.error(error.response?.data?.error || "فشل في تعيين المنطقة الزمنية");
+    } finally {
+      setSubmittingTimezone(false);
+    }
+  };
+
+  const handleSetUserTimezones = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!userTimezonesForm.userId || !userTimezonesForm.timezones) {
+      toast.error("يرجى إدخال معرف المستخدم والمناطق الزمنية");
+      return;
+    }
+    const tzArray = userTimezonesForm.timezones
+      .split(",")
+      .map(t => parseInt(t.trim()))
+      .filter(t => !isNaN(t));
+      
+    if (tzArray.length === 0) {
+      toast.error("يرجى إدخال مناطق زمنية صالحة مفصولة بفواصل");
+      return;
+    }
+    
+    setSubmittingUserTimezones(true);
+    try {
+      const res = await axios.post(`/api/devices/${id}/user-timezones`, {
+        userId: userTimezonesForm.userId,
+        timezones: tzArray
+      });
+      if (res.data.success) {
+        toast.success(res.data.message || "تم تعيين مناطق المستخدم الزمنية بنجاح");
+        setUserTimezonesOpen(false);
+        setUserTimezonesForm({ userId: "", timezones: "" });
+      } else {
+        toast.error(res.data.error || "فشل تعيين مناطق المستخدم الزمنية");
+      }
+    } catch (err: unknown) {
+      const error = err as { response?: { data?: { error?: string } } };
+      toast.error(error.response?.data?.error || "فشل في تعيين مناطق المستخدم الزمنية");
+    } finally {
+      setSubmittingUserTimezones(false);
+    }
+  };
+
+  const handleDeleteEnroll = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!deleteEnrollForm.userId) {
+      toast.error("يرجى إدخال معرف المستخدم");
+      return;
+    }
+    setSubmittingDeleteEnroll(true);
+    try {
+      const res = await axios.post(`/api/devices/${id}/delete-enroll-data`, {
+        userId: deleteEnrollForm.userId,
+        fingerIndex: parseInt(deleteEnrollForm.fingerIndex)
+      });
+      if (res.data.success) {
+        toast.success(res.data.message || "تم حذف بيانات التسجيل بنجاح");
+        setDeleteEnrollOpen(false);
+        setDeleteEnrollForm({ userId: "", fingerIndex: "0" });
+      } else {
+        toast.error(res.data.error || "فشل حذف بيانات التسجيل");
+      }
+    } catch (err: unknown) {
+      const error = err as { response?: { data?: { error?: string } } };
+      toast.error(error.response?.data?.error || "فشل في حذف بيانات التسجيل");
+    } finally {
+      setSubmittingDeleteEnroll(false);
     }
   };
 
@@ -781,7 +1150,7 @@ export default function DeviceSettingsPage({ params }: ParamsProps) {
                     size="sm"
                     variant="outline"
                     className="w-full mt-3 text-xs"
-                    onClick={() => toast("ميزة قيد التطوير")}
+                    onClick={() => setAddUserOpen(true)}
                   >
                     إضافة
                   </Button>
@@ -797,7 +1166,7 @@ export default function DeviceSettingsPage({ params }: ParamsProps) {
                     size="sm"
                     variant="outline"
                     className="w-full mt-3 text-xs"
-                    onClick={() => toast("ميزة قيد التطوير")}
+                    onClick={() => setDeleteUserOpen(true)}
                   >
                     حذف
                   </Button>
@@ -813,7 +1182,7 @@ export default function DeviceSettingsPage({ params }: ParamsProps) {
                     size="sm"
                     variant="outline"
                     className="w-full mt-3 text-xs"
-                    onClick={() => toast("ميزة قيد التطوير")}
+                    onClick={() => setToggleUserOpen(true)}
                   >
                     التحكم
                   </Button>
@@ -829,7 +1198,7 @@ export default function DeviceSettingsPage({ params }: ParamsProps) {
                     size="sm"
                     variant="outline"
                     className="w-full mt-3 text-xs"
-                    onClick={() => toast("ميزة قيد التطوير")}
+                    onClick={() => setUserGroupOpen(true)}
                   >
                     تعيين
                   </Button>
@@ -857,7 +1226,7 @@ export default function DeviceSettingsPage({ params }: ParamsProps) {
                     size="sm"
                     variant="outline"
                     className="w-full mt-3 text-xs"
-                    onClick={() => toast("ميزة قيد التطوير")}
+                    onClick={() => setTimezoneOpen(true)}
                   >
                     إعداد
                   </Button>
@@ -873,7 +1242,7 @@ export default function DeviceSettingsPage({ params }: ParamsProps) {
                     size="sm"
                     variant="outline"
                     className="w-full mt-3 text-xs"
-                    onClick={() => toast("ميزة قيد التطوير")}
+                    onClick={() => setUserTimezonesOpen(true)}
                   >
                     تعيين
                   </Button>
@@ -998,7 +1367,7 @@ export default function DeviceSettingsPage({ params }: ParamsProps) {
                     size="sm"
                     variant="outline"
                     className="w-full mt-3 text-xs"
-                    onClick={() => toast("ميزة قيد التطوير")}
+                    onClick={() => setDeleteEnrollOpen(true)}
                   >
                     حذف
                   </Button>
@@ -1138,6 +1507,414 @@ export default function DeviceSettingsPage({ params }: ParamsProps) {
           onSuccess={fetchDevice}
           device={device}
         />
+      )}
+
+      {/* Add User Modal */}
+      {addUserOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-md rounded-2xl bg-white border border-gray-100 p-6 shadow-2xl space-y-4 animate-in fade-in zoom-in duration-200 text-right" dir="rtl">
+            <div className="flex justify-between items-center border-b border-gray-100 pb-3">
+              <h3 className="font-bold text-gray-900 text-base">إضافة مستخدم جديد للجهاز</h3>
+              <button onClick={() => setAddUserOpen(false)} className="text-gray-400 hover:text-gray-600">✕</button>
+            </div>
+            <form onSubmit={handleAddUser} className="space-y-3.5">
+              <div>
+                <label className="block text-xs font-bold text-gray-700 mb-1.5">الرقم التسلسلي (UID - رقم فريد بالبصمة)</label>
+                <input
+                  type="number"
+                  required
+                  placeholder="مثال: 1"
+                  value={newUser.uid}
+                  onChange={e => setNewUser({ ...newUser, uid: e.target.value })}
+                  className="w-full text-xs text-gray-900 bg-white placeholder:text-gray-400 border border-gray-200 rounded-lg p-2.5 outline-none focus:border-blue-500 transition-colors"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-gray-700 mb-1.5">معرف المستخدم (User ID - رقم الكارت/الموظف)</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="مثال: 1001"
+                  value={newUser.userId}
+                  onChange={e => setNewUser({ ...newUser, userId: e.target.value })}
+                  className="w-full text-xs text-gray-900 bg-white placeholder:text-gray-400 border border-gray-200 rounded-lg p-2.5 outline-none focus:border-blue-500 transition-colors"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-gray-700 mb-1.5">اسم المستخدم</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="مثال: محمد أحمد"
+                  value={newUser.name}
+                  onChange={e => setNewUser({ ...newUser, name: e.target.value })}
+                  className="w-full text-xs text-gray-900 bg-white placeholder:text-gray-400 border border-gray-200 rounded-lg p-2.5 outline-none focus:border-blue-500 transition-colors"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-gray-700 mb-1.5">كلمة المرور (اختياري)</label>
+                <input
+                  type="password"
+                  placeholder="مثال: 123456"
+                  value={newUser.password}
+                  onChange={e => setNewUser({ ...newUser, password: e.target.value })}
+                  className="w-full text-xs text-gray-900 bg-white placeholder:text-gray-400 border border-gray-200 rounded-lg p-2.5 outline-none focus:border-blue-500 transition-colors"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 mb-1.5">الصلاحية (Role)</label>
+                  <select
+                    value={newUser.role}
+                    onChange={e => setNewUser({ ...newUser, role: e.target.value })}
+                    className="w-full text-xs text-gray-900 bg-white border border-gray-200 rounded-lg p-2.5 outline-none focus:border-blue-500 transition-colors"
+                  >
+                    <option value="0">مستخدم عادي</option>
+                    <option value="14">مسؤول النظام (Admin)</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 mb-1.5">رقم الكارت (اختياري)</label>
+                  <input
+                    type="number"
+                    placeholder="مثال: 4567"
+                    value={newUser.cardno}
+                    onChange={e => setNewUser({ ...newUser, cardno: e.target.value })}
+                    className="w-full text-xs text-gray-900 bg-white placeholder:text-gray-400 border border-gray-200 rounded-lg p-2.5 outline-none focus:border-blue-500 transition-colors"
+                  />
+                </div>
+              </div>
+              <div className="flex gap-2.5 pt-2">
+                <Button type="submit" size="sm" loading={submittingAddUser} className="flex-1">
+                  إضافة
+                </Button>
+                <Button type="button" variant="outline" size="sm" onClick={() => setAddUserOpen(false)} className="flex-1">
+                  إلغاء
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Delete User Modal */}
+      {deleteUserOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-md rounded-2xl bg-white border border-gray-100 p-6 shadow-2xl space-y-4 animate-in fade-in zoom-in duration-200 text-right" dir="rtl">
+            <div className="flex justify-between items-center border-b border-gray-100 pb-3">
+              <h3 className="font-bold text-gray-900 text-base">حذف مستخدم من الجهاز</h3>
+              <button onClick={() => setDeleteUserOpen(false)} className="text-gray-400 hover:text-gray-600">✕</button>
+            </div>
+            <form onSubmit={handleDeleteUser} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-gray-700 mb-1.5">معرف المستخدم (User ID)</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="مثال: 1001"
+                  value={delUserId}
+                  onChange={e => setDelUserId(e.target.value)}
+                  className="w-full text-xs text-gray-900 bg-white placeholder:text-gray-400 border border-gray-200 rounded-lg p-2.5 outline-none focus:border-blue-500 transition-colors"
+                />
+              </div>
+              <p className="text-xs text-rose-600 leading-normal">
+                ⚠️ تنبيه: سيتم حذف هذا المستخدم وكل سجلاته المرتبطة بجهاز البصمة بشكل نهائي.
+              </p>
+              <div className="flex gap-2.5">
+                <Button type="submit" size="sm" loading={submittingDelUser} className="flex-1 text-white bg-rose-600 hover:bg-rose-700 border-none">
+                  حذف المستخدم
+                </Button>
+                <Button type="button" variant="outline" size="sm" onClick={() => setDeleteUserOpen(false)} className="flex-1">
+                  إلغاء
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Toggle User Modal */}
+      {toggleUserOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-md rounded-2xl bg-white border border-gray-100 p-6 shadow-2xl space-y-4 animate-in fade-in zoom-in duration-200 text-right" dir="rtl">
+            <div className="flex justify-between items-center border-b border-gray-100 pb-3">
+              <h3 className="font-bold text-gray-900 text-base">تفعيل/تعطيل صلاحيات المستخدم</h3>
+              <button onClick={() => setToggleUserOpen(false)} className="text-gray-400 hover:text-gray-600">✕</button>
+            </div>
+            <form onSubmit={handleToggleUser} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-gray-700 mb-1.5">معرف المستخدم (User ID)</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="مثال: 1001"
+                  value={toggleUser.userId}
+                  onChange={e => setToggleUser({ ...toggleUser, userId: e.target.value })}
+                  className="w-full text-xs text-gray-900 bg-white placeholder:text-gray-400 border border-gray-200 rounded-lg p-2.5 outline-none focus:border-blue-500 transition-colors"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-gray-700 mb-1.5">حالة تفعيل المستخدم بالجهاز</label>
+                <select
+                  value={toggleUser.enabled ? "true" : "false"}
+                  onChange={e => setToggleUser({ ...toggleUser, enabled: e.target.value === "true" })}
+                  className="w-full text-xs text-gray-900 bg-white border border-gray-200 rounded-lg p-2.5 outline-none focus:border-blue-500 transition-colors"
+                >
+                  <option value="true">نشط ومفعل (Enabled)</option>
+                  <option value="false">معطل (Disabled)</option>
+                </select>
+              </div>
+              <div className="flex gap-2.5">
+                <Button type="submit" size="sm" loading={submittingToggleUser} className="flex-1">
+                  تعديل الحالة
+                </Button>
+                <Button type="button" variant="outline" size="sm" onClick={() => setToggleUserOpen(false)} className="flex-1">
+                  إلغاء
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* User Group Modal */}
+      {userGroupOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-md rounded-2xl bg-white border border-gray-100 p-6 shadow-2xl space-y-4 animate-in fade-in zoom-in duration-200 text-right" dir="rtl">
+            <div className="flex justify-between items-center border-b border-gray-100 pb-3">
+              <h3 className="font-bold text-gray-900 text-base">تعيين مجموعة للمستخدم</h3>
+              <button onClick={() => setUserGroupOpen(false)} className="text-gray-400 hover:text-gray-600">✕</button>
+            </div>
+            <form onSubmit={handleSetUserGroup} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-gray-700 mb-1.5">الرقم التسلسلي للمستخدم (User SN)</label>
+                <input
+                  type="number"
+                  required
+                  placeholder="مثال: 1"
+                  value={userGroup.userSn}
+                  onChange={e => setUserGroup({ ...userGroup, userSn: e.target.value })}
+                  className="w-full text-xs text-gray-900 bg-white placeholder:text-gray-400 border border-gray-200 rounded-lg p-2.5 outline-none focus:border-blue-500 transition-colors"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-gray-700 mb-1.5">رقم المجموعة (Group Number)</label>
+                <input
+                  type="number"
+                  required
+                  placeholder="مثال: 1"
+                  value={userGroup.groupNumber}
+                  onChange={e => setUserGroup({ ...userGroup, groupNumber: e.target.value })}
+                  className="w-full text-xs text-gray-900 bg-white placeholder:text-gray-400 border border-gray-200 rounded-lg p-2.5 outline-none focus:border-blue-500 transition-colors"
+                />
+              </div>
+              <div className="flex gap-2.5">
+                <Button type="submit" size="sm" loading={submittingUserGroup} className="flex-1">
+                  تعيين المجموعة
+                </Button>
+                <Button type="button" variant="outline" size="sm" onClick={() => setUserGroupOpen(false)} className="flex-1">
+                  إلغاء
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Timezone Modal */}
+      {timezoneOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-lg rounded-2xl bg-white border border-gray-100 p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto animate-in fade-in zoom-in duration-200 text-right" dir="rtl">
+            <div className="flex justify-between items-center border-b border-gray-100 pb-3">
+              <h3 className="font-bold text-gray-900 text-base">إعدادات المنطقة الزمنية للجهاز</h3>
+              <button onClick={() => setTimezoneOpen(false)} className="text-gray-400 hover:text-gray-600">✕</button>
+            </div>
+            <form onSubmit={handleSetTimezone} className="space-y-3.5">
+              <div>
+                <label className="block text-xs font-bold text-gray-700 mb-1.5">رقم المنطقة الزمنية (Timezone Index - من 1 إلى 50)</label>
+                <input
+                  type="number"
+                  min="1"
+                  max="50"
+                  required
+                  value={timezoneForm.timezoneIndex}
+                  onChange={e => setTimezoneForm({ ...timezoneForm, timezoneIndex: e.target.value })}
+                  className="w-full text-xs text-gray-900 bg-white placeholder:text-gray-400 border border-gray-200 rounded-lg p-2.5 outline-none focus:border-blue-500 transition-colors"
+                />
+              </div>
+              <p className="text-[10px] text-gray-400">تنسيق النطاق الزمني: HH:MM TO HH:MM (مثال: 08:00 TO 17:00)</p>
+              <div className="grid grid-cols-2 gap-3.5 text-right">
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 mb-1">الأحد (Sunday)</label>
+                  <input
+                    type="text"
+                    required
+                    value={timezoneForm.sunday}
+                    onChange={e => setTimezoneForm({ ...timezoneForm, sunday: e.target.value })}
+                    className="w-full text-xs text-gray-900 bg-white placeholder:text-gray-400 border border-gray-200 rounded-lg p-2.5 outline-none focus:border-blue-500 transition-colors"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 mb-1">الأثنين (Monday)</label>
+                  <input
+                    type="text"
+                    required
+                    value={timezoneForm.monday}
+                    onChange={e => setTimezoneForm({ ...timezoneForm, monday: e.target.value })}
+                    className="w-full text-xs text-gray-900 bg-white placeholder:text-gray-400 border border-gray-200 rounded-lg p-2.5 outline-none focus:border-blue-500 transition-colors"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 mb-1">الثلاثاء (Tuesday)</label>
+                  <input
+                    type="text"
+                    required
+                    value={timezoneForm.tuesday}
+                    onChange={e => setTimezoneForm({ ...timezoneForm, tuesday: e.target.value })}
+                    className="w-full text-xs text-gray-900 bg-white placeholder:text-gray-400 border border-gray-200 rounded-lg p-2.5 outline-none focus:border-blue-500 transition-colors"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 mb-1">الأربعاء (Wednesday)</label>
+                  <input
+                    type="text"
+                    required
+                    value={timezoneForm.wednesday}
+                    onChange={e => setTimezoneForm({ ...timezoneForm, wednesday: e.target.value })}
+                    className="w-full text-xs text-gray-900 bg-white placeholder:text-gray-400 border border-gray-200 rounded-lg p-2.5 outline-none focus:border-blue-500 transition-colors"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 mb-1">الخميس (Thursday)</label>
+                  <input
+                    type="text"
+                    required
+                    value={timezoneForm.thursday}
+                    onChange={e => setTimezoneForm({ ...timezoneForm, thursday: e.target.value })}
+                    className="w-full text-xs text-gray-900 bg-white placeholder:text-gray-400 border border-gray-200 rounded-lg p-2.5 outline-none focus:border-blue-500 transition-colors"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 mb-1">الجمعة (Friday)</label>
+                  <input
+                    type="text"
+                    required
+                    value={timezoneForm.friday}
+                    onChange={e => setTimezoneForm({ ...timezoneForm, friday: e.target.value })}
+                    className="w-full text-xs text-gray-900 bg-white placeholder:text-gray-400 border border-gray-200 rounded-lg p-2.5 outline-none focus:border-blue-500 transition-colors"
+                  />
+                </div>
+                <div className="col-span-2">
+                  <label className="block text-xs font-bold text-gray-700 mb-1">السبت (Saturday)</label>
+                  <input
+                    type="text"
+                    required
+                    value={timezoneForm.saturday}
+                    onChange={e => setTimezoneForm({ ...timezoneForm, saturday: e.target.value })}
+                    className="w-full text-xs text-gray-900 bg-white placeholder:text-gray-400 border border-gray-200 rounded-lg p-2.5 outline-none focus:border-blue-500 transition-colors"
+                  />
+                </div>
+              </div>
+              <div className="flex gap-2.5 pt-2.5">
+                <Button type="submit" size="sm" loading={submittingTimezone} className="flex-1">
+                  حفظ المنطقة الزمنية
+                </Button>
+                <Button type="button" variant="outline" size="sm" onClick={() => setTimezoneOpen(false)} className="flex-1">
+                  إلغاء
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* User Timezones Modal */}
+      {userTimezonesOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-md rounded-2xl bg-white border border-gray-100 p-6 shadow-2xl space-y-4 animate-in fade-in zoom-in duration-200 text-right" dir="rtl">
+            <div className="flex justify-between items-center border-b border-gray-100 pb-3">
+              <h3 className="font-bold text-gray-900 text-base">تعيين مناطق زمنية للمستخدم</h3>
+              <button onClick={() => setUserTimezonesOpen(false)} className="text-gray-400 hover:text-gray-600">✕</button>
+            </div>
+            <form onSubmit={handleSetUserTimezones} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-gray-700 mb-1.5">معرف المستخدم (User ID)</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="مثال: 1001"
+                  value={userTimezonesForm.userId}
+                  onChange={e => setUserTimezonesForm({ ...userTimezonesForm, userId: e.target.value })}
+                  className="w-full text-xs text-gray-900 bg-white placeholder:text-gray-400 border border-gray-200 rounded-lg p-2.5 outline-none focus:border-blue-500 transition-colors"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-gray-700 mb-1.5">المناطق الزمنية المحددة (مفصولة بفواصل)</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="مثال: 1, 2, 5"
+                  value={userTimezonesForm.timezones}
+                  onChange={e => setUserTimezonesForm({ ...userTimezonesForm, timezones: e.target.value })}
+                  className="w-full text-xs text-gray-900 bg-white placeholder:text-gray-400 border border-gray-200 rounded-lg p-2.5 outline-none focus:border-blue-500 transition-colors"
+                />
+              </div>
+              <div className="flex gap-2.5">
+                <Button type="submit" size="sm" loading={submittingUserTimezones} className="flex-1">
+                  تعيين المناطق الزمنية
+                </Button>
+                <Button type="button" variant="outline" size="sm" onClick={() => setUserTimezonesOpen(false)} className="flex-1">
+                  إلغاء
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Enroll Modal */}
+      {deleteEnrollOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-md rounded-2xl bg-white border border-gray-100 p-6 shadow-2xl space-y-4 animate-in fade-in zoom-in duration-200 text-right" dir="rtl">
+            <div className="flex justify-between items-center border-b border-gray-100 pb-3">
+              <h3 className="font-bold text-gray-900 text-base">حذف بيانات التسجيل (البصمة) للمستخدم</h3>
+              <button onClick={() => setDeleteEnrollOpen(false)} className="text-gray-400 hover:text-gray-600">✕</button>
+            </div>
+            <form onSubmit={handleDeleteEnroll} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-gray-700 mb-1.5">معرف المستخدم (User ID)</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="مثال: 1001"
+                  value={deleteEnrollForm.userId}
+                  onChange={e => setDeleteEnrollForm({ ...deleteEnrollForm, userId: e.target.value })}
+                  className="w-full text-xs text-gray-900 bg-white placeholder:text-gray-400 border border-gray-200 rounded-lg p-2.5 outline-none focus:border-blue-500 transition-colors"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-gray-700 mb-1.5">رقم مؤشر البصمة (Finger Index - من 0 إلى 9)</label>
+                <input
+                  type="number"
+                  min="0"
+                  max="9"
+                  required
+                  value={deleteEnrollForm.fingerIndex}
+                  onChange={e => setDeleteEnrollForm({ ...deleteEnrollForm, fingerIndex: e.target.value })}
+                  className="w-full text-xs text-gray-900 bg-white placeholder:text-gray-400 border border-gray-200 rounded-lg p-2.5 outline-none focus:border-blue-500 transition-colors"
+                />
+              </div>
+              <div className="flex gap-2.5">
+                <Button type="submit" size="sm" loading={submittingDeleteEnroll} className="flex-1 text-white bg-rose-600 hover:bg-rose-700 border-none">
+                  حذف البصمة
+                </Button>
+                <Button type="button" variant="outline" size="sm" onClick={() => setDeleteEnrollOpen(false)} className="flex-1">
+                  إلغاء
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
       )}
     </div>
   );
