@@ -100,11 +100,14 @@ export class AttendanceParser {
 
     return {
       employeeId: deviceUserId,
+      deviceUserId: deviceUserId,
       timestamp: recordTime,
+      recordTime: recordTime,
       verifyModeCode,
       verifyType: this.getVerifyTypeString(verifyModeCode),
       attendanceStateCode,
       attendanceType: this.getAttendanceTypeString(attendanceStateCode),
+      type: attendanceStateCode,
     };
   }
 }
