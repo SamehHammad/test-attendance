@@ -165,8 +165,8 @@ export default function SettingsForm() {
                             key={tab.id}
                             onClick={() => { setActiveTab(tab.id as any); setTestResult(null); setSuccessMsg(""); }}
                             className={`flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all ${isActive
-                                    ? "border-blue-600 bg-blue-50 text-blue-700"
-                                    : "border-gray-200 bg-white text-gray-500 hover:border-blue-200 hover:bg-gray-50"
+                                ? "border-blue-600 bg-blue-50 text-blue-700"
+                                : "border-gray-200 bg-white text-gray-500 hover:border-blue-200 hover:bg-gray-50"
                                 }`}
                         >
                             <Icon className="h-6 w-6 mb-2" />
@@ -189,7 +189,7 @@ export default function SettingsForm() {
                                 <h2 className="text-xl font-bold text-gray-900">إعدادات توجيه المنافذ (Port Forwarding)</h2>
                             </div>
                             {formData.networkMode === "port" && (
-                                <span className="bg-blue-100 text-blue-800 text-xs px-3 py-1 rounded-full font-bold border border-blue-200">نشط حالياً</span>
+                                <span className="bg-blue-100 text-blue-800 text-xs px-3 py-1 rounded-full font-bold border border-blue-200">الإعداد المحفوظ</span>
                             )}
                         </div>
 
@@ -213,7 +213,7 @@ export default function SettingsForm() {
                                             type="text" name="publicIp"
                                             value={formData.publicIp} onChange={handleChange}
                                             placeholder="مثال: 197.xx.xx.xx"
-                                            className="w-full bg-white border border-gray-300 rounded-lg py-2.5 pl-4 pr-10 focus:ring-2 focus:ring-blue-500 font-mono text-left"
+                                            className="w-full bg-white border border-gray-300 rounded-lg py-2.5 pl-4 pr-10 focus:ring-2 focus:ring-blue-500 font-mono text-gray-900 font-semibold placeholder:text-gray-400 placeholder:font-normal text-left"
                                             dir="ltr"
                                         />
                                     </div>
@@ -226,7 +226,7 @@ export default function SettingsForm() {
                                             type="number" name="publicPort"
                                             value={formData.publicPort} onChange={handleChange}
                                             placeholder="مثال: 4370"
-                                            className="w-full bg-white border border-gray-300 rounded-lg py-2.5 pl-4 pr-10 focus:ring-2 focus:ring-blue-500 font-mono text-left"
+                                            className="w-full bg-white border border-gray-300 rounded-lg py-2.5 pl-4 pr-10 focus:ring-2 focus:ring-blue-500 font-mono text-gray-900 font-semibold placeholder:text-gray-400 placeholder:font-normal text-left"
                                             dir="ltr"
                                         />
                                     </div>
@@ -265,7 +265,7 @@ export default function SettingsForm() {
                                 <h2 className="text-xl font-bold text-gray-900">إعدادات الاتصال عبر شبكة خاصة (VPN)</h2>
                             </div>
                             {formData.networkMode === "vpn" && (
-                                <span className="bg-blue-100 text-blue-800 text-xs px-3 py-1 rounded-full font-bold border border-blue-200">نشط حالياً</span>
+                                <span className="bg-blue-100 text-blue-800 text-xs px-3 py-1 rounded-full font-bold border border-blue-200">الإعداد المحفوظ</span>
                             )}
                         </div>
 
@@ -285,7 +285,7 @@ export default function SettingsForm() {
                                             type="text" name="vpnIp"
                                             value={formData.vpnIp} onChange={handleChange}
                                             placeholder="مثال: 10.8.0.x"
-                                            className="w-full bg-white border border-gray-300 rounded-lg py-2.5 pl-4 pr-10 focus:ring-2 focus:ring-blue-500 font-mono text-left"
+                                            className="w-full bg-white border border-gray-300 rounded-lg py-2.5 pl-4 pr-10 focus:ring-2 focus:ring-blue-500 font-mono text-gray-900 font-semibold placeholder:text-gray-400 placeholder:font-normal text-left"
                                             dir="ltr"
                                         />
                                     </div>
@@ -298,7 +298,7 @@ export default function SettingsForm() {
                                             type="number" name="vpnPort"
                                             value={formData.vpnPort} onChange={handleChange}
                                             placeholder="مثال: 4370"
-                                            className="w-full bg-white border border-gray-300 rounded-lg py-2.5 pl-4 pr-10 focus:ring-2 focus:ring-blue-500 font-mono text-left"
+                                            className="w-full bg-white border border-gray-300 rounded-lg py-2.5 pl-4 pr-10 focus:ring-2 focus:ring-blue-500 font-mono text-gray-900 font-semibold placeholder:text-gray-400 placeholder:font-normal text-left"
                                             dir="ltr"
                                         />
                                     </div>
@@ -311,8 +311,8 @@ export default function SettingsForm() {
                                             type="text" name="vpnUsername"
                                             value={formData.vpnUsername} onChange={handleChange}
                                             placeholder="اختياري"
-                                            className="w-full bg-white border border-gray-300 rounded-lg py-2.5 pl-4 pr-10 focus:ring-2 focus:ring-blue-500 text-left"
-                                            dir="ltr"
+                                            className="w-full bg-white border border-gray-300 rounded-lg py-2.5 pl-4 pr-10 focus:ring-2 focus:ring-blue-500 text-gray-900 font-semibold placeholder:text-gray-400 placeholder:font-normal text-left"
+                                            dir="auto"
                                         />
                                     </div>
                                 </div>
@@ -324,7 +324,7 @@ export default function SettingsForm() {
                                             type="password" name="vpnPassword"
                                             value={formData.vpnPassword} onChange={handleChange}
                                             placeholder="••••••••••"
-                                            className="w-full bg-white border border-gray-300 rounded-lg py-2.5 pl-4 pr-10 focus:ring-2 focus:ring-blue-500 text-left"
+                                            className="w-full bg-white border border-gray-300 rounded-lg py-2.5 pl-4 pr-10 focus:ring-2 focus:ring-blue-500 text-gray-900 font-bold placeholder:text-gray-400 placeholder:font-normal text-left"
                                             dir="ltr"
                                         />
                                     </div>
@@ -363,7 +363,7 @@ export default function SettingsForm() {
                                 <h2 className="text-xl font-bold text-gray-900">ربط عبر نفق (Ngrok / Cloudflare Tunnel)</h2>
                             </div>
                             {formData.networkMode === "tunnel" && (
-                                <span className="bg-blue-100 text-blue-800 text-xs px-3 py-1 rounded-full font-bold border border-blue-200">نشط حالياً</span>
+                                <span className="bg-blue-100 text-blue-800 text-xs px-3 py-1 rounded-full font-bold border border-blue-200">الإعداد المحفوظ</span>
                             )}
                         </div>
 
@@ -385,7 +385,7 @@ export default function SettingsForm() {
                                         type="text" name="tunnelUrl"
                                         value={formData.tunnelUrl} onChange={handleChange}
                                         placeholder="مثال: tcp://0.tcp.ngrok.io:12345"
-                                        className="w-full bg-white border border-gray-300 rounded-lg py-2.5 pl-4 pr-10 focus:ring-2 focus:ring-blue-500 font-mono text-left"
+                                        className="w-full bg-white border border-gray-300 rounded-lg py-2.5 pl-4 pr-10 focus:ring-2 focus:ring-blue-500 font-mono text-gray-900 font-semibold placeholder:text-gray-400 placeholder:font-normal text-left"
                                         dir="ltr"
                                     />
                                 </div>
@@ -423,7 +423,7 @@ export default function SettingsForm() {
                                 <h2 className="text-xl font-bold text-gray-900">تفعيل بروتوكول ADMS (الدفع المباشر)</h2>
                             </div>
                             {formData.networkMode === "adms" && (
-                                <span className="bg-blue-100 text-blue-800 text-xs px-3 py-1 rounded-full font-bold border border-blue-200">نشط حالياً</span>
+                                <span className="bg-blue-100 text-blue-800 text-xs px-3 py-1 rounded-full font-bold border border-blue-200">الإعداد المحفوظ</span>
                             )}
                         </div>
 
