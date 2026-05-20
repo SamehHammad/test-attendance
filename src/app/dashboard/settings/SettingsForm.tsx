@@ -1,14 +1,16 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Shield, Globe, Router, SwitchCamera, AlertTriangle, CheckCircle2, Server, Key, Info, User, Lock, Network } from "lucide-react";
-import { getSystemSettings, updateSystemSettings } from "@/app/actions/settings";
+import { Shield, Globe, Router, SwitchCamera, AlertTriangle, CheckCircle2, Server, Key, Info, User, Lock, Network, Loader2, XCircle } from "lucide-react";
+import { getSystemSettings, updateSystemSettings, testConnection } from "@/app/actions/settings";
 
 export default function SettingsForm() {
     const [activeTab, setActiveTab] = useState<"port" | "vpn" | "adms" | "tunnel">("port");
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
+    const [isTesting, setIsTesting] = useState(false);
     const [successMsg, setSuccessMsg] = useState("");
+    const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null);
 
     const [formData, setFormData] = useState({
         networkMode: "local",
@@ -58,6 +60,7 @@ export default function SettingsForm() {
     const handleSave = async (mode: string) => {
         setIsSaving(true);
         setSuccessMsg("");
+        setTestResult(null);
         try {
             const payload = { ...formData, networkMode: mode };
             await updateSystemSettings(payload);
@@ -72,7 +75,57 @@ export default function SettingsForm() {
         }
     };
 
-    if (isLoading) return <div>جاري تحميل الإعدادات...</div>;
+    const handleTestConnection = async (type: "port" | "vpn" | "tunnel") => {
+        setIsTesting(true);
+        setTestResult(null);
+        try {
+            let host = "";
+            let port = 0;
+            if (type === "port") {
+                host = formData.publicIp;
+                port = parseInt(formData.publicPort);
+            } else if (type === "vpn") {
+                host = formData.vpnIp;
+                port = parseInt(formData.vpnPort);
+            } else if (type === "tunnel") {
+                // Not standard TCP test usually, but we can try parsing the tunnel url if it's tcp://host:port
+                if (formData.tunnelUrl.startsWith("tcp://")) {
+                    const parts = formData.tunnelUrl.replace("tcp://", "").split(":");
+                    host = parts[0];
+                    port = parseInt(parts[1]);
+                }
+            }
+
+            if (!host || !port || isNaN(port)) {
+                setTestResult({ success: false, message: "الرجاء إدخال الآي بي والمنفذ بشكل صحيح قبل الاختبار." });
+                setIsTesting(false);
+                return;
+            }
+
+            const res = await testConnection(host, port);
+            setTestResult(res);
+        } catch (e) {
+            setTestResult({ success: false, message: "حدث خطأ أثناء اختبار الاتصال." });
+        } finally {
+            setIsTesting(false);
+        }
+    };
+
+    if (isLoading) {
+        return (
+            <div className="flex flex-col items-center justify-center h-64 space-y-4">
+                <Loader2 className="h-8 w-8 text-blue-600 animate-spin" />
+                <p className="text-gray-500 font-medium tracking-wide">جاري تحميل الإعدادات...</p>
+            </div>
+        );
+    }
+
+    const tabs = [
+        { id: "port", icon: Router, label: "توجيه المنافذ", desc: "Port Forwarding" },
+        { id: "vpn", icon: Shield, label: "VPN خاص", desc: "Virtual Private Network" },
+        { id: "tunnel", icon: Network, label: "نفق (Tunnel)", desc: "Ngrok / Cloudflare" },
+        { id: "adms", icon: SwitchCamera, label: "ADMS (دفع)", desc: "جهاز البصمة يتصل بالخادم" }
+    ] as const;
 
     return (
         <div className="space-y-6 max-w-5xl mx-auto" dir="rtl">
@@ -86,68 +139,46 @@ export default function SettingsForm() {
             {successMsg && (
                 <div className="bg-green-50 border border-green-200 text-green-800 p-4 rounded-xl flex items-center gap-2">
                     <CheckCircle2 className="h-5 w-5" />
-                    {successMsg}
+                    <span className="font-medium text-sm">{successMsg}</span>
                 </div>
             )}
 
-            <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex gap-4">
-                <AlertTriangle className="text-amber-500 shrink-0 mt-0.5" />
+            <div className="bg-amber-50 border border-amber-200 rounded-xl p-5 flex gap-4">
+                <AlertTriangle className="text-amber-600 shrink-0 mt-0.5" />
                 <div>
-                    <h3 className="font-semibold text-amber-800">تجاوز قيود الشبكة المحلية لـ Vercel</h3>
-                    <p className="text-sm text-amber-700 mt-1">
+                    <h3 className="font-semibold text-amber-900">تجاوز قيود الشبكة المحلية لـ Vercel</h3>
+                    <p className="text-sm text-amber-800 mt-1 leading-relaxed">
                         اختر إحدى الطرق التالية ووفر بيانات الاتصال المناسبة.
-                        النظام سيحاول الاتصال بالجهاز المحلي من خلال هذا المسار بدلاً من الـ IP الداخلي.
+                        النظام سيحاول الاتصال بالجهاز المحلي من خلال هذا المسار بدلاً من الـ IP الداخلي
+                        مما يتيح للخادم السحابي الوصول للأجهزة المحلية.
                     </p>
                 </div>
             </div>
 
+            {/* Tabs */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-                <button
-                    onClick={() => setActiveTab("port")}
-                    className={`flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all ${activeTab === "port"
-                            ? "border-blue-600 bg-blue-50 text-blue-700"
-                            : "border-gray-200 bg-white text-gray-500 hover:border-blue-200 hover:bg-gray-50"
-                        }`}
-                >
-                    <Router className="h-6 w-6 mb-2" />
-                    <span className="font-semibold text-sm">توجيه المنافذ</span>
-                </button>
-
-                <button
-                    onClick={() => setActiveTab("vpn")}
-                    className={`flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all ${activeTab === "vpn"
-                            ? "border-emerald-600 bg-emerald-50 text-emerald-700"
-                            : "border-gray-200 bg-white text-gray-500 hover:border-emerald-200 hover:bg-gray-50"
-                        }`}
-                >
-                    <Shield className="h-6 w-6 mb-2" />
-                    <span className="font-semibold text-sm">VPN خاص</span>
-                </button>
-
-                <button
-                    onClick={() => setActiveTab("tunnel")}
-                    className={`flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all ${activeTab === "tunnel"
-                            ? "border-orange-600 bg-orange-50 text-orange-700"
-                            : "border-gray-200 bg-white text-gray-500 hover:border-orange-200 hover:bg-gray-50"
-                        }`}
-                >
-                    <Network className="h-6 w-6 mb-2" />
-                    <span className="font-semibold text-sm">نفق (Tunnel)</span>
-                </button>
-
-                <button
-                    onClick={() => setActiveTab("adms")}
-                    className={`flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all ${activeTab === "adms"
-                            ? "border-purple-600 bg-purple-50 text-purple-700"
-                            : "border-gray-200 bg-white text-gray-500 hover:border-purple-200 hover:bg-gray-50"
-                        }`}
-                >
-                    <SwitchCamera className="h-6 w-6 mb-2" />
-                    <span className="font-semibold text-sm">ADMS (دفع)</span>
-                </button>
+                {tabs.map((tab) => {
+                    const isActive = activeTab === tab.id;
+                    const Icon = tab.icon;
+                    return (
+                        <button
+                            key={tab.id}
+                            onClick={() => { setActiveTab(tab.id as any); setTestResult(null); setSuccessMsg(""); }}
+                            className={`flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all ${isActive
+                                    ? "border-blue-600 bg-blue-50 text-blue-700"
+                                    : "border-gray-200 bg-white text-gray-500 hover:border-blue-200 hover:bg-gray-50"
+                                }`}
+                        >
+                            <Icon className="h-6 w-6 mb-2" />
+                            <span className="font-bold text-sm">{tab.label}</span>
+                            <span className={`text-xs mt-1 ${isActive ? "text-blue-500" : "text-gray-400"}`}>{tab.desc}</span>
+                        </button>
+                    );
+                })}
             </div>
 
             <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+                {/* Port Forwarding Tab */}
                 {activeTab === "port" && (
                     <div className="p-6">
                         <div className="flex items-center justify-between mb-6 border-b border-gray-100 pb-4">
@@ -155,214 +186,274 @@ export default function SettingsForm() {
                                 <div className="bg-blue-100 p-2 rounded-lg">
                                     <Router className="text-blue-600 h-6 w-6" />
                                 </div>
-                                <h2 className="text-xl font-bold">إعدادات Port Forwarding</h2>
+                                <h2 className="text-xl font-bold text-gray-900">إعدادات توجيه المنافذ (Port Forwarding)</h2>
                             </div>
                             {formData.networkMode === "port" && (
-                                <span className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full font-bold">نشط حالياً</span>
+                                <span className="bg-blue-100 text-blue-800 text-xs px-3 py-1 rounded-full font-bold border border-blue-200">نشط حالياً</span>
                             )}
                         </div>
 
                         <div className="space-y-6">
                             <div className="bg-gray-50 rounded-lg p-5 border border-gray-100">
-                                <h4 className="font-semibold text-gray-800 mb-2 flex items-center gap-2">
-                                    <Info className="h-4 w-4 text-blue-500" />
-                                    دليل الإعداد السريع:
+                                <h4 className="font-semibold text-gray-800 mb-2 flex items-center gap-2 text-sm">
+                                    <Info className="h-5 w-5 text-blue-500" />
+                                    دليل الإعداد :
                                 </h4>
-                                <p className="text-sm text-gray-600">
-                                    قم بتوجيه المنفذ الداخلي (مثل 4370 للجهاز) إلى منفذ خارجي في راوتر المكتب، وأدخل الـ IP العام الخاص بمودم الإنترنت.
+                                <p className="text-sm text-gray-600 leading-relaxed">
+                                    قم بتوجيه المنفذ الداخلي (مثل 4370 للجهاز) إلى منفذ خارجي في راوتر المكتب، وأدخل الـ IP العام (Public IP) الخاص بمزود خدمة الإنترنت هنا.
                                 </p>
                             </div>
 
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">الآي بي العام (Public IP)</label>
+                                    <label className="block text-sm font-bold text-gray-800 mb-2">الآي بي العام (Public IP)</label>
                                     <div className="relative">
                                         <Globe className="absolute right-3 top-2.5 h-5 w-5 text-gray-400" />
                                         <input
                                             type="text" name="publicIp"
                                             value={formData.publicIp} onChange={handleChange}
                                             placeholder="مثال: 197.xx.xx.xx"
-                                            className="w-full bg-white border border-gray-300 rounded-lg py-2.5 pl-4 pr-10 focus:ring-2 focus:ring-blue-500"
+                                            className="w-full bg-white border border-gray-300 rounded-lg py-2.5 pl-4 pr-10 focus:ring-2 focus:ring-blue-500 font-mono text-left"
+                                            dir="ltr"
                                         />
                                     </div>
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">المنفذ الخارجي (External Port)</label>
+                                    <label className="block text-sm font-bold text-gray-800 mb-2">المنفذ الخارجي (External Port)</label>
                                     <div className="relative">
                                         <Server className="absolute right-3 top-2.5 h-5 w-5 text-gray-400" />
                                         <input
                                             type="number" name="publicPort"
                                             value={formData.publicPort} onChange={handleChange}
-                                            placeholder="مثال: 4371"
-                                            className="w-full bg-white border border-gray-300 rounded-lg py-2.5 pl-4 pr-10 focus:ring-2 focus:ring-blue-500"
+                                            placeholder="مثال: 4370"
+                                            className="w-full bg-white border border-gray-300 rounded-lg py-2.5 pl-4 pr-10 focus:ring-2 focus:ring-blue-500 font-mono text-left"
+                                            dir="ltr"
                                         />
                                     </div>
                                 </div>
                             </div>
 
-                            <button disabled={isSaving} onClick={() => handleSave("port")} className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg disabled:opacity-50">
-                                {isSaving ? "جاري الحفظ..." : "حفظ واستخدام Port Forwarding"}
-                            </button>
+                            {testResult && (
+                                <div className={`p-4 rounded-xl flex items-center gap-3 border ${testResult.success ? "bg-green-50 border-green-200 text-green-800" : "bg-red-50 border-red-200 text-red-800"}`}>
+                                    {testResult.success ? <CheckCircle2 className="h-5 w-5" /> : <XCircle className="h-5 w-5" />}
+                                    <span className="font-semibold text-sm">{testResult.message}</span>
+                                </div>
+                            )}
+
+                            <div className="flex gap-4 pt-4 border-t border-gray-100">
+                                <button disabled={isTesting || isSaving} onClick={() => handleTestConnection("port")} className="flex-1 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-lg disabled:opacity-50 transition-colors flex justify-center items-center gap-2">
+                                    {isTesting && <Loader2 className="h-4 w-4 animate-spin" />}
+                                    اختبار الاتصال
+                                </button>
+                                <button disabled={isSaving || isTesting} onClick={() => handleSave("port")} className="flex-1 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg disabled:opacity-50 transition-colors flex justify-center items-center gap-2">
+                                    {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+                                    {isSaving ? "جاري الحفظ..." : "حفظ وتفعيل"}
+                                </button>
+                            </div>
                         </div>
                     </div>
                 )}
 
+                {/* VPN Tab */}
                 {activeTab === "vpn" && (
                     <div className="p-6">
                         <div className="flex items-center justify-between mb-6 border-b border-gray-100 pb-4">
                             <div className="flex items-center gap-3">
-                                <div className="bg-emerald-100 p-2 rounded-lg">
-                                    <Shield className="text-emerald-600 h-6 w-6" />
+                                <div className="bg-blue-100 p-2 rounded-lg">
+                                    <Shield className="text-blue-600 h-6 w-6" />
                                 </div>
-                                <h2 className="text-xl font-bold">إعدادات الاتصال عبر VPN (خوادم وسيطة)</h2>
+                                <h2 className="text-xl font-bold text-gray-900">إعدادات الاتصال عبر شبكة خاصة (VPN)</h2>
                             </div>
                             {formData.networkMode === "vpn" && (
-                                <span className="bg-emerald-100 text-emerald-800 text-xs px-2 py-1 rounded-full font-bold">نشط حالياً</span>
+                                <span className="bg-blue-100 text-blue-800 text-xs px-3 py-1 rounded-full font-bold border border-blue-200">نشط حالياً</span>
                             )}
                         </div>
 
                         <div className="space-y-6">
                             <div className="bg-gray-50 rounded-lg p-5 border border-gray-100 mb-4">
-                                <p className="text-sm text-gray-600">
-                                    إذا كنت تدير خادم VPN خاص بك (مثل OpenVPN ، WireGuard ، أو Proxy)، يرجى إدخال بيانات الوصول أدناه ليتمكن التطبيق من الاتصال بالشبكة من خلاله.
+                                <p className="text-sm text-gray-600 leading-relaxed">
+                                    أدخل بيانات الوصول لخادم الـ VPN الخاص بك (مثل OpenVPN أو WireGuard) ليتمكن النظام من الوصول لأجهزة البصمة المتصلة بنفس الشبكة الخاصة.
                                 </p>
                             </div>
 
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">آي بي الـ VPN (VPN IP)</label>
+                                    <label className="block text-sm font-bold text-gray-800 mb-2">عنوان IP الشبكة (VPN IP)</label>
                                     <div className="relative">
                                         <Globe className="absolute right-3 top-2.5 h-5 w-5 text-gray-400" />
                                         <input
                                             type="text" name="vpnIp"
                                             value={formData.vpnIp} onChange={handleChange}
-                                            placeholder="10.8.0.x"
-                                            className="w-full bg-white border border-gray-300 rounded-lg py-2.5 pl-4 pr-10 focus:ring-2 focus:ring-emerald-500"
+                                            placeholder="مثال: 10.8.0.x"
+                                            className="w-full bg-white border border-gray-300 rounded-lg py-2.5 pl-4 pr-10 focus:ring-2 focus:ring-blue-500 font-mono text-left"
+                                            dir="ltr"
                                         />
                                     </div>
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">منفذ الـ VPN</label>
+                                    <label className="block text-sm font-bold text-gray-800 mb-2">منفذ الاتصال (VPN Port)</label>
                                     <div className="relative">
                                         <Server className="absolute right-3 top-2.5 h-5 w-5 text-gray-400" />
                                         <input
                                             type="number" name="vpnPort"
                                             value={formData.vpnPort} onChange={handleChange}
-                                            placeholder="1194"
-                                            className="w-full bg-white border border-gray-300 rounded-lg py-2.5 pl-4 pr-10 focus:ring-2 focus:ring-emerald-500"
+                                            placeholder="مثال: 4370"
+                                            className="w-full bg-white border border-gray-300 rounded-lg py-2.5 pl-4 pr-10 focus:ring-2 focus:ring-blue-500 font-mono text-left"
+                                            dir="ltr"
                                         />
                                     </div>
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">اسم المستخدم (إن وجد)</label>
+                                    <label className="block text-sm font-bold text-gray-800 mb-2">اسم المستخدم (إن وجد)</label>
                                     <div className="relative">
                                         <User className="absolute right-3 top-2.5 h-5 w-5 text-gray-400" />
                                         <input
                                             type="text" name="vpnUsername"
                                             value={formData.vpnUsername} onChange={handleChange}
-                                            placeholder="Username"
-                                            className="w-full bg-white border border-gray-300 rounded-lg py-2.5 pl-4 pr-10 focus:ring-2 focus:ring-emerald-500"
+                                            placeholder="اختياري"
+                                            className="w-full bg-white border border-gray-300 rounded-lg py-2.5 pl-4 pr-10 focus:ring-2 focus:ring-blue-500 text-left"
+                                            dir="ltr"
                                         />
                                     </div>
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">كلمة المرور / المفتاح السري</label>
+                                    <label className="block text-sm font-bold text-gray-800 mb-2">كلمة المرور / المفتاح السري</label>
                                     <div className="relative">
                                         <Lock className="absolute right-3 top-2.5 h-5 w-5 text-gray-400" />
                                         <input
                                             type="password" name="vpnPassword"
                                             value={formData.vpnPassword} onChange={handleChange}
-                                            placeholder="••••••••"
-                                            className="w-full bg-white border border-gray-300 rounded-lg py-2.5 pl-4 pr-10 focus:ring-2 focus:ring-emerald-500"
+                                            placeholder="••••••••••"
+                                            className="w-full bg-white border border-gray-300 rounded-lg py-2.5 pl-4 pr-10 focus:ring-2 focus:ring-blue-500 text-left"
+                                            dir="ltr"
                                         />
                                     </div>
                                 </div>
                             </div>
 
-                            <button disabled={isSaving} onClick={() => handleSave("vpn")} className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded-lg disabled:opacity-50">
-                                {isSaving ? "جاري الحفظ..." : "حفظ واستخدام الـ VPN"}
-                            </button>
+                            {testResult && (
+                                <div className={`p-4 rounded-xl flex items-center gap-3 border ${testResult.success ? "bg-green-50 border-green-200 text-green-800" : "bg-red-50 border-red-200 text-red-800"}`}>
+                                    {testResult.success ? <CheckCircle2 className="h-5 w-5" /> : <XCircle className="h-5 w-5" />}
+                                    <span className="font-semibold text-sm">{testResult.message}</span>
+                                </div>
+                            )}
+
+                            <div className="flex gap-4 pt-4 border-t border-gray-100">
+                                <button disabled={isTesting || isSaving} onClick={() => handleTestConnection("vpn")} className="flex-1 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-lg disabled:opacity-50 transition-colors flex justify-center items-center gap-2">
+                                    {isTesting && <Loader2 className="h-4 w-4 animate-spin" />}
+                                    اختبار الاتصال
+                                </button>
+                                <button disabled={isSaving || isTesting} onClick={() => handleSave("vpn")} className="flex-1 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg disabled:opacity-50 transition-colors flex justify-center items-center gap-2">
+                                    {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+                                    {isSaving ? "جاري الحفظ..." : "حفظ وتفعيل"}
+                                </button>
+                            </div>
                         </div>
                     </div>
                 )}
 
+                {/* Tunnel Tab */}
                 {activeTab === "tunnel" && (
                     <div className="p-6">
                         <div className="flex items-center justify-between mb-6 border-b border-gray-100 pb-4">
                             <div className="flex items-center gap-3">
-                                <div className="bg-orange-100 p-2 rounded-lg">
-                                    <Network className="text-orange-600 h-6 w-6" />
+                                <div className="bg-blue-100 p-2 rounded-lg">
+                                    <Network className="text-blue-600 h-6 w-6" />
                                 </div>
-                                <h2 className="text-xl font-bold">ربط عبر نفق (Ngrok / Cloudflare)</h2>
+                                <h2 className="text-xl font-bold text-gray-900">ربط عبر نفق (Ngrok / Cloudflare Tunnel)</h2>
                             </div>
                             {formData.networkMode === "tunnel" && (
-                                <span className="bg-orange-100 text-orange-800 text-xs px-2 py-1 rounded-full font-bold">نشط حالياً</span>
+                                <span className="bg-blue-100 text-blue-800 text-xs px-3 py-1 rounded-full font-bold border border-blue-200">نشط حالياً</span>
                             )}
                         </div>
 
                         <div className="space-y-6">
                             <div className="bg-gray-50 rounded-lg p-5 border border-gray-100">
-                                <p className="text-sm text-gray-600 leading-relaxed mb-3">
+                                <p className="text-sm text-gray-600 leading-relaxed mb-3 font-semibold">
                                     قم بتشغيل وكيل (Agent) صغير على جهاز كمبيوتر متصل بنفس الشبكة التي بها جهاز البصمة، وأدخل رابط الخادم المولد أدناه.
                                 </p>
-                                <div className="bg-[#1e1e1e] p-3 rounded-md text-orange-400 font-mono text-sm border border-gray-800" dir="ltr">
-                                    ngrok p2p 30.30.30.63:4370
+                                <div className="bg-gray-900 p-3 rounded-md text-green-400 font-mono text-sm border border-gray-800 text-left" dir="ltr">
+                                    ngrok tcp 4370
                                 </div>
                             </div>
 
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">رابط الخادم (Tunnel TCP URL)</label>
+                                <label className="block text-sm font-bold text-gray-800 mb-2">رابط الخادم (TCP URL)</label>
                                 <div className="relative">
                                     <Key className="absolute right-3 top-2.5 h-5 w-5 text-gray-400" />
                                     <input
                                         type="text" name="tunnelUrl"
                                         value={formData.tunnelUrl} onChange={handleChange}
                                         placeholder="مثال: tcp://0.tcp.ngrok.io:12345"
-                                        className="w-full bg-white border border-gray-300 rounded-lg py-2.5 pl-4 pr-10 focus:ring-2 focus:ring-orange-500"
+                                        className="w-full bg-white border border-gray-300 rounded-lg py-2.5 pl-4 pr-10 focus:ring-2 focus:ring-blue-500 font-mono text-left"
+                                        dir="ltr"
                                     />
                                 </div>
                             </div>
 
-                            <button disabled={isSaving} onClick={() => handleSave("tunnel")} className="w-full py-3 bg-orange-600 hover:bg-orange-700 text-white font-medium rounded-lg disabled:opacity-50">
-                                {isSaving ? "جاري الحفظ..." : "حفظ الرابط كخيار رئيسي"}
-                            </button>
+                            {testResult && (
+                                <div className={`p-4 rounded-xl flex items-center gap-3 border ${testResult.success ? "bg-green-50 border-green-200 text-green-800" : "bg-red-50 border-red-200 text-red-800"}`}>
+                                    {testResult.success ? <CheckCircle2 className="h-5 w-5" /> : <XCircle className="h-5 w-5" />}
+                                    <span className="font-semibold text-sm">{testResult.message}</span>
+                                </div>
+                            )}
+
+                            <div className="flex gap-4 pt-4 border-t border-gray-100">
+                                <button disabled={isTesting || isSaving} onClick={() => handleTestConnection("tunnel")} className="flex-1 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-lg disabled:opacity-50 transition-colors flex justify-center items-center gap-2">
+                                    {isTesting && <Loader2 className="h-4 w-4 animate-spin" />}
+                                    اختبار الاتصال
+                                </button>
+                                <button disabled={isSaving || isTesting} onClick={() => handleSave("tunnel")} className="flex-1 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg disabled:opacity-50 transition-colors flex justify-center items-center gap-2">
+                                    {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+                                    {isSaving ? "جاري الحفظ..." : "حفظ وتفعيل"}
+                                </button>
+                            </div>
                         </div>
                     </div>
                 )}
 
+                {/* ADMS Tab */}
                 {activeTab === "adms" && (
                     <div className="p-6">
                         <div className="flex items-center justify-between mb-6 border-b border-gray-100 pb-4">
                             <div className="flex items-center gap-3">
-                                <div className="bg-purple-100 p-2 rounded-lg">
-                                    <SwitchCamera className="text-purple-600 h-6 w-6" />
+                                <div className="bg-blue-100 p-2 rounded-lg">
+                                    <SwitchCamera className="text-blue-600 h-6 w-6" />
                                 </div>
-                                <h2 className="text-xl font-bold">تفعيل بروتوكول ADMS (الدفع المباشر)</h2>
+                                <h2 className="text-xl font-bold text-gray-900">تفعيل بروتوكول ADMS (الدفع المباشر)</h2>
                             </div>
                             {formData.networkMode === "adms" && (
-                                <span className="bg-purple-100 text-purple-800 text-xs px-2 py-1 rounded-full font-bold">نشط حالياً</span>
+                                <span className="bg-blue-100 text-blue-800 text-xs px-3 py-1 rounded-full font-bold border border-blue-200">نشط حالياً</span>
                             )}
                         </div>
 
                         <div className="space-y-6">
                             <div className="bg-gray-50 rounded-lg p-5 border border-gray-100">
-                                <p className="text-sm text-gray-600 leading-relaxed mb-4">
-                                    هذه الطريقة تعكس سير العمل: جهاز البصمة سيتصل تلقائياً بخدمات Vercel.
-                                    لإعداد هذه الطريقة، تأكد أن جهاز البصمة لديك يدعم خيار (ADMS Server) أو Cloud.
+                                <p className="text-sm text-gray-800 font-semibold leading-relaxed mb-4">
+                                    هذه الطريقة تعكس سير العمل: جهاز البصمة سيتصل تلقائياً بخدمات Vercel بشكل مباشر.
+                                    لإعداد هذه الطريقة، تأكد أن جهاز البصمة لديك يدعم خيار (ADMS Server) أو Cloud Settings.
                                 </p>
+                                <ul className="text-sm text-gray-600 space-y-2 list-disc list-inside">
+                                    <li>الدخول لإعدادات الجهاز - الشبكة - Cloud Server</li>
+                                    <li>إدخال عنوان الخادم (Domain/IP) لهذا الموقع.</li>
+                                    <li>تحديد المنفذ (عادة 80 أو 443).</li>
+                                </ul>
                             </div>
 
-                            <div className="bg-purple-50 text-purple-800 p-4 rounded-lg flex gap-3 border border-purple-200">
-                                <CheckCircle2 className="h-6 w-6 shrink-0" />
+                            <div className="bg-blue-50 text-blue-800 p-4 rounded-xl flex gap-3 border border-blue-200">
+                                <CheckCircle2 className="h-6 w-6 shrink-0 text-blue-600" />
                                 <div>
-                                    <h4 className="font-semibold mb-1">واجهة الاستقبال (API)</h4>
-                                    <p className="text-sm opacity-80 text-purple-700">لقد تم تجهيز خوادم Vercel لاستقبال طلبات الدفع من الجهاز تلقائياً.</p>
+                                    <h4 className="font-bold mb-1">واجهة الاستقبال (API)</h4>
+                                    <p className="text-sm font-medium text-blue-700">لقد تم تجهيز خوادم الموقع لاستقبال طلبات الدفع من الجهاز تلقائياً.</p>
                                 </div>
                             </div>
 
-                            <button disabled={isSaving} onClick={() => handleSave("adms")} className="w-full py-3 bg-purple-600 hover:bg-purple-700 text-white font-medium rounded-lg disabled:opacity-50">
-                                {isSaving ? "جاري الحفظ..." : "ضبط النظام على وضع الاستقبال (ADMS)"}
-                            </button>
+                            <div className="pt-4 border-t border-gray-100">
+                                <button disabled={isSaving} onClick={() => handleSave("adms")} className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg disabled:opacity-50 transition-colors flex justify-center items-center gap-2">
+                                    {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+                                    {isSaving ? "جاري الحفظ..." : "ضبط النظام على وضع الاستقبال (ADMS)"}
+                                </button>
+                            </div>
                         </div>
                     </div>
                 )}
