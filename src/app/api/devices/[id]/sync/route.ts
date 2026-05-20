@@ -69,12 +69,18 @@ export async function POST(_req: Request, { params }: Params) {
           data: {
             deviceUserId: rec.deviceUserId,
             recordTime: rec.recordTime,
-            type: rec.type,
+            type: rec.type ?? 0,
             deviceId: id,
             employeeId: employee?.id ?? null,
           },
         });
         inserted++;
+      } else if (existing.type !== rec.type && rec.type !== undefined) {
+        // Fix old records that were saved with incorrect types before the update
+        await prisma.attendanceRecord.update({
+          where: { id: existing.id },
+          data: { type: rec.type }
+        });
       }
     }
 
