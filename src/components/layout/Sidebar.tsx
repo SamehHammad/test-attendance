@@ -11,6 +11,7 @@ import {
   ChevronRight,
   Fingerprint,
   X,
+  Server,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -19,6 +20,7 @@ const navItems = [
   { href: "/dashboard/devices", label: "الأجهزة", icon: Monitor },
   { href: "/dashboard/employees", label: "الموظفون", icon: Users },
   { href: "/dashboard/attendance", label: "سجلات الحضور", icon: ClipboardList },
+  { href: "/dashboard/settings", label: "إعدادات الاتصال (VPN/Gateway)", icon: Server },
 ];
 
 interface SidebarProps {
