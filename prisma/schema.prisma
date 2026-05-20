@@ -74,6 +74,12 @@ model SystemSetting {
   vpnUsername    String?
   vpnPassword    String?
 
+  // Connection status
+  isConnected    Boolean  @default(false)
+  connectionStatus String? @default("disconnected") // "connected", "disconnected", "connecting", "error"
+  lastConnectionTime DateTime?
+  connectionError String?
+
   updatedAt      DateTime @updatedAt
   
   @@map("system_settings")

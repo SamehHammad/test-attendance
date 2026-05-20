@@ -68,3 +68,42 @@ export async function testConnection(host: string, port: number): Promise<{ succ
         socket.connect(port, host);
     });
 }
+
+export async function getConnectionStatus() {
+    const settings = await prisma.systemSetting.findUnique({
+        where: { id: "global" }
+    });
+
+    if (!settings) {
+        return {
+            isConnected: false,
+            connectionStatus: "disconnected",
+            lastConnectionTime: null,
+            connectionError: null,
+            networkMode: "local"
+        };
+    }
+
+    return {
+        isConnected: settings.isConnected || false,
+        connectionStatus: settings.connectionStatus || "disconnected",
+        lastConnectionTime: settings.lastConnectionTime,
+        connectionError: settings.connectionError,
+        networkMode: settings.networkMode
+    };
+}
+
+export async function setConnectionStatus(status: "connected" | "disconnected" | "connecting" | "error", error?: string) {
+    const settings = await prisma.systemSetting.update({
+        where: { id: "global" },
+        data: {
+            connectionStatus: status,
+            isConnected: status === "connected",
+            lastConnectionTime: status === "connected" ? new Date() : undefined,
+            connectionError: error || null
+        }
+    });
+
+    revalidatePath("/dashboard/settings");
+    return settings;
+}

@@ -1,16 +1,31 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Shield, Globe, Router, SwitchCamera, AlertTriangle, CheckCircle2, Server, Key, Info, User, Lock, Network, Loader2, XCircle } from "lucide-react";
-import { getSystemSettings, updateSystemSettings, testConnection } from "@/app/actions/settings";
+import { Shield, Globe, Router, SwitchCamera, AlertTriangle, CheckCircle2, Server, Key, Info, User, Lock, Network, Loader2, XCircle, Power, Wifi, WifiOff, Clock, RefreshCw } from "lucide-react";
+import { getSystemSettings, updateSystemSettings, testConnection, getConnectionStatus } from "@/app/actions/settings";
 
 export default function SettingsForm() {
     const [activeTab, setActiveTab] = useState<"port" | "vpn" | "adms" | "tunnel">("port");
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
     const [isTesting, setIsTesting] = useState(false);
+    const [isConnecting, setIsConnecting] = useState(false);
+    const [isDisconnecting, setIsDisconnecting] = useState(false);
     const [successMsg, setSuccessMsg] = useState("");
     const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null);
+    const [connectionStatus, setConnectionStatus] = useState<{
+        isConnected: boolean;
+        connectionStatus: string;
+        lastConnectionTime: Date | null;
+        connectionError: string | null;
+        networkMode: string;
+    }>({
+        isConnected: false,
+        connectionStatus: "disconnected",
+        lastConnectionTime: null,
+        connectionError: null,
+        networkMode: "local"
+    });
 
     const [formData, setFormData] = useState({
         networkMode: "local",
@@ -43,6 +58,10 @@ export default function SettingsForm() {
                 else if (data.networkMode === "tunnel") setActiveTab("tunnel");
                 else if (data.networkMode === "adms") setActiveTab("adms");
                 else setActiveTab("port");
+
+                // Load connection status
+                const connStatus = await getConnectionStatus();
+                setConnectionStatus(connStatus);
             } catch (e) {
                 console.error(e);
             } finally {
@@ -50,6 +69,19 @@ export default function SettingsForm() {
             }
         }
         load();
+    }, []);
+
+    // Auto-refresh connection status every 10 seconds
+    useEffect(() => {
+        const interval = setInterval(async () => {
+            try {
+                const connStatus = await getConnectionStatus();
+                setConnectionStatus(connStatus);
+            } catch (e) {
+                console.error(e);
+            }
+        }, 10000);
+        return () => clearInterval(interval);
     }, []);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -111,6 +143,80 @@ export default function SettingsForm() {
         }
     };
 
+    const handleConnect = async (mode: "port" | "vpn" | "tunnel") => {
+        setIsConnecting(true);
+        setSuccessMsg("");
+        setTestResult(null);
+        try {
+            let host = "";
+            let port = 0;
+            if (mode === "port") {
+                host = formData.publicIp;
+                port = parseInt(formData.publicPort);
+            } else if (mode === "vpn") {
+                host = formData.vpnIp;
+                port = parseInt(formData.vpnPort);
+            } else if (mode === "tunnel") {
+                if (formData.tunnelUrl.startsWith("tcp://")) {
+                    const parts = formData.tunnelUrl.replace("tcp://", "").split(":");
+                    host = parts[0];
+                    port = parseInt(parts[1]);
+                }
+            }
+
+            if (!host || !port || isNaN(port)) {
+                setTestResult({ success: false, message: "الرجاء إدخال الآي بي والمنفذ بشكل صحيح قبل الاتصال." });
+                setIsConnecting(false);
+                return;
+            }
+
+            // First save the settings
+            await updateSystemSettings({ ...formData, networkMode: mode });
+
+            // Then test and connect
+            const res = await testConnection(host, port);
+            if (res.success) {
+                // Update connection status via API
+                await fetch("/api/connection", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ action: "connect", mode })
+                });
+                setSuccessMsg("تم الاتصال بنجاح! الاتصال دائم حتى يتم فصله يدوياً.");
+                setTestResult(res);
+                // Refresh connection status
+                const connStatus = await getConnectionStatus();
+                setConnectionStatus(connStatus);
+            } else {
+                setTestResult(res);
+            }
+        } catch (e) {
+            setTestResult({ success: false, message: "حدث خطأ أثناء الاتصال." });
+        } finally {
+            setIsConnecting(false);
+        }
+    };
+
+    const handleDisconnect = async () => {
+        setIsDisconnecting(true);
+        setSuccessMsg("");
+        try {
+            await fetch("/api/connection", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ action: "disconnect" })
+            });
+            setSuccessMsg("تم فصل الاتصال بنجاح.");
+            // Refresh connection status
+            const connStatus = await getConnectionStatus();
+            setConnectionStatus(connStatus);
+        } catch (e) {
+            setTestResult({ success: false, message: "حدث خطأ أثناء فصل الاتصال." });
+        } finally {
+            setIsDisconnecting(false);
+        }
+    };
+
     if (isLoading) {
         return (
             <div className="flex flex-col items-center justify-center h-64 space-y-4">
@@ -134,6 +240,89 @@ export default function SettingsForm() {
                 <p className="text-gray-500 mt-2">
                     إعدادات الجسر وطرق الوصول لجهاز البصمة المحلي (Local Device)
                 </p>
+            </div>
+
+            {/* Connection Status Card */}
+            <div className={`rounded-xl p-5 border-2 ${
+                connectionStatus.isConnected 
+                    ? "bg-green-50 border-green-200" 
+                    : connectionStatus.connectionStatus === "connecting"
+                    ? "bg-blue-50 border-blue-200"
+                    : connectionStatus.connectionStatus === "error"
+                    ? "bg-red-50 border-red-200"
+                    : "bg-gray-50 border-gray-200"
+            }`}>
+                <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                        <div className={`p-3 rounded-full ${
+                            connectionStatus.isConnected 
+                                ? "bg-green-100" 
+                                : connectionStatus.connectionStatus === "connecting"
+                                ? "bg-blue-100"
+                                : connectionStatus.connectionStatus === "error"
+                                ? "bg-red-100"
+                                : "bg-gray-200"
+                        }`}>
+                            {connectionStatus.isConnected ? (
+                                <Wifi className="h-6 w-6 text-green-600" />
+                            ) : connectionStatus.connectionStatus === "connecting" ? (
+                                <Loader2 className="h-6 w-6 text-blue-600 animate-spin" />
+                            ) : connectionStatus.connectionStatus === "error" ? (
+                                <WifiOff className="h-6 w-6 text-red-600" />
+                            ) : (
+                                <WifiOff className="h-6 w-6 text-gray-500" />
+                            )}
+                        </div>
+                        <div>
+                            <h3 className="font-bold text-lg">
+                                {connectionStatus.isConnected 
+                                    ? "الاتصال نشط ومستمر" 
+                                    : connectionStatus.connectionStatus === "connecting"
+                                    ? "جاري الاتصال..."
+                                    : connectionStatus.connectionStatus === "error"
+                                    ? "فشل الاتصال"
+                                    : "غير متصل"}
+                            </h3>
+                            <div className="flex items-center gap-4 mt-1 text-sm">
+                                <span className={`font-medium ${
+                                    connectionStatus.isConnected 
+                                        ? "text-green-700" 
+                                        : connectionStatus.connectionStatus === "connecting"
+                                        ? "text-blue-700"
+                                        : connectionStatus.connectionStatus === "error"
+                                        ? "text-red-700"
+                                        : "text-gray-600"
+                                }`}>
+                                    {connectionStatus.networkMode === "vpn" ? "VPN خاص" : 
+                                     connectionStatus.networkMode === "port" ? "توجيه المنافذ" :
+                                     connectionStatus.networkMode === "tunnel" ? "نفق (Tunnel)" :
+                                     connectionStatus.networkMode === "adms" ? "ADMS" : "محلي"}
+                                </span>
+                                {connectionStatus.lastConnectionTime && (
+                                    <span className="text-gray-500 flex items-center gap-1">
+                                        <Clock className="h-4 w-4" />
+                                        آخر اتصال: {new Date(connectionStatus.lastConnectionTime).toLocaleString('ar-EG')}
+                                    </span>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                    {connectionStatus.isConnected && (
+                        <button
+                            onClick={handleDisconnect}
+                            disabled={isDisconnecting}
+                            className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-bold rounded-lg disabled:opacity-50 transition-colors flex items-center gap-2"
+                        >
+                            {isDisconnecting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Power className="h-4 w-4" />}
+                            فصل الاتصال
+                        </button>
+                    )}
+                </div>
+                {connectionStatus.connectionError && (
+                    <div className="mt-3 p-3 bg-red-100 rounded-lg border border-red-200">
+                        <p className="text-sm text-red-800 font-medium">{connectionStatus.connectionError}</p>
+                    </div>
+                )}
             </div>
 
             {successMsg && (
@@ -241,13 +430,17 @@ export default function SettingsForm() {
                             )}
 
                             <div className="flex gap-4 pt-4 border-t border-gray-100">
-                                <button disabled={isTesting || isSaving} onClick={() => handleTestConnection("port")} className="flex-1 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-lg disabled:opacity-50 transition-colors flex justify-center items-center gap-2">
+                                <button disabled={isTesting || isSaving || isConnecting} onClick={() => handleTestConnection("port")} className="flex-1 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-lg disabled:opacity-50 transition-colors flex justify-center items-center gap-2">
                                     {isTesting && <Loader2 className="h-4 w-4 animate-spin" />}
                                     اختبار الاتصال
                                 </button>
-                                <button disabled={isSaving || isTesting} onClick={() => handleSave("port")} className="flex-1 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg disabled:opacity-50 transition-colors flex justify-center items-center gap-2">
+                                <button disabled={isSaving || isTesting || isConnecting} onClick={() => handleConnect("port")} className="flex-1 py-3 bg-green-600 hover:bg-green-700 text-white font-bold rounded-lg disabled:opacity-50 transition-colors flex justify-center items-center gap-2">
+                                    {isConnecting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Wifi className="h-4 w-4" />}
+                                    {isConnecting ? "جاري الاتصال..." : "اتصال دائم"}
+                                </button>
+                                <button disabled={isSaving || isTesting || isConnecting} onClick={() => handleSave("port")} className="flex-1 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg disabled:opacity-50 transition-colors flex justify-center items-center gap-2">
                                     {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-                                    {isSaving ? "جاري الحفظ..." : "حفظ وتفعيل"}
+                                    {isSaving ? "جاري الحفظ..." : "حفظ فقط"}
                                 </button>
                             </div>
                         </div>
@@ -339,13 +532,17 @@ export default function SettingsForm() {
                             )}
 
                             <div className="flex gap-4 pt-4 border-t border-gray-100">
-                                <button disabled={isTesting || isSaving} onClick={() => handleTestConnection("vpn")} className="flex-1 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-lg disabled:opacity-50 transition-colors flex justify-center items-center gap-2">
+                                <button disabled={isTesting || isSaving || isConnecting} onClick={() => handleTestConnection("vpn")} className="flex-1 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-lg disabled:opacity-50 transition-colors flex justify-center items-center gap-2">
                                     {isTesting && <Loader2 className="h-4 w-4 animate-spin" />}
                                     اختبار الاتصال
                                 </button>
-                                <button disabled={isSaving || isTesting} onClick={() => handleSave("vpn")} className="flex-1 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg disabled:opacity-50 transition-colors flex justify-center items-center gap-2">
+                                <button disabled={isSaving || isTesting || isConnecting} onClick={() => handleConnect("vpn")} className="flex-1 py-3 bg-green-600 hover:bg-green-700 text-white font-bold rounded-lg disabled:opacity-50 transition-colors flex justify-center items-center gap-2">
+                                    {isConnecting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Shield className="h-4 w-4" />}
+                                    {isConnecting ? "جاري الاتصال..." : "اتصال دائم"}
+                                </button>
+                                <button disabled={isSaving || isTesting || isConnecting} onClick={() => handleSave("vpn")} className="flex-1 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg disabled:opacity-50 transition-colors flex justify-center items-center gap-2">
                                     {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-                                    {isSaving ? "جاري الحفظ..." : "حفظ وتفعيل"}
+                                    {isSaving ? "جاري الحفظ..." : "حفظ فقط"}
                                 </button>
                             </div>
                         </div>
@@ -399,13 +596,17 @@ export default function SettingsForm() {
                             )}
 
                             <div className="flex gap-4 pt-4 border-t border-gray-100">
-                                <button disabled={isTesting || isSaving} onClick={() => handleTestConnection("tunnel")} className="flex-1 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-lg disabled:opacity-50 transition-colors flex justify-center items-center gap-2">
+                                <button disabled={isTesting || isSaving || isConnecting} onClick={() => handleTestConnection("tunnel")} className="flex-1 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-lg disabled:opacity-50 transition-colors flex justify-center items-center gap-2">
                                     {isTesting && <Loader2 className="h-4 w-4 animate-spin" />}
                                     اختبار الاتصال
                                 </button>
-                                <button disabled={isSaving || isTesting} onClick={() => handleSave("tunnel")} className="flex-1 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg disabled:opacity-50 transition-colors flex justify-center items-center gap-2">
+                                <button disabled={isSaving || isTesting || isConnecting} onClick={() => handleConnect("tunnel")} className="flex-1 py-3 bg-green-600 hover:bg-green-700 text-white font-bold rounded-lg disabled:opacity-50 transition-colors flex justify-center items-center gap-2">
+                                    {isConnecting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Network className="h-4 w-4" />}
+                                    {isConnecting ? "جاري الاتصال..." : "اتصال دائم"}
+                                </button>
+                                <button disabled={isSaving || isTesting || isConnecting} onClick={() => handleSave("tunnel")} className="flex-1 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg disabled:opacity-50 transition-colors flex justify-center items-center gap-2">
                                     {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-                                    {isSaving ? "جاري الحفظ..." : "حفظ وتفعيل"}
+                                    {isSaving ? "جاري الحفظ..." : "حفظ فقط"}
                                 </button>
                             </div>
                         </div>
