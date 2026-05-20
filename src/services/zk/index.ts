@@ -361,7 +361,7 @@ class ZKServiceFacade {
           4: "مشغول",
           5: "في انتظار كتابة البطاقة",
         };
-        const stateCode = res?.readUInt16LE(12) || 0;
+        const stateCode = (res && res.length >= 14) ? res.readUInt16LE(12) : 0;
         return {
           success: true,
           state: {
@@ -447,7 +447,7 @@ class ZKServiceFacade {
         const buf = Buffer.alloc(4);
         buf.writeUInt32LE(userSn, 0);
         const res = await zk.executeCmd(27, buf);
-        const group = res?.readUInt8(16) || 1;
+        const group = (res && res.length >= 17) ? res.readUInt8(16) : 1;
         return { success: true, group };
       },
       () => ({ success: true, group: 1 })
@@ -617,7 +617,7 @@ class ZKServiceFacade {
       { ip, port },
       async (zk) => {
         const res = await zk.executeCmd(94, "");
-        const state = res?.readUInt8(16) === 1 ? "مفتوح" : "مغلق";
+        const state = (res && res.length > 16 && res.readUInt8(16) === 1) ? "مفتوح" : "مغلق";
         return { success: true, state };
       },
       () => ({ success: true, state: "مغلق" })

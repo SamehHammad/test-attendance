@@ -221,7 +221,11 @@ export default function DeviceSettingsPage({ params }: ParamsProps) {
   const handleTestConnection = async () => {
     setTestingConn(true);
     setTestingConnProgress(0);
-    const interval = setInterval(() => setTestingConnProgress(p => p >= 90 ? p : p + Math.floor(Math.random() * 15) + 5), 300);
+    const interval = setInterval(() => setTestingConnProgress(p => {
+      if (p >= 90) return p;
+      const next = p + Math.floor(Math.random() * 15) + 5;
+      return next > 90 ? 90 : next;
+    }), 300);
     try {
       const res = await axios.post(`/api/devices/${id}/test-connection`);
       clearInterval(interval);
@@ -247,7 +251,11 @@ export default function DeviceSettingsPage({ params }: ParamsProps) {
   const handleSyncLogs = async () => {
     setSyncing(true);
     setSyncingProgress(0);
-    const interval = setInterval(() => setSyncingProgress(p => p >= 95 ? p : p + Math.floor(Math.random() * 10) + 2), 400);
+    const interval = setInterval(() => setSyncingProgress(p => {
+      if (p >= 95) return p;
+      const next = p + Math.floor(Math.random() * 10) + 2;
+      return next > 95 ? 95 : next;
+    }), 400);
     try {
       const res = await axios.post(`/api/devices/${id}/sync`);
       clearInterval(interval);
@@ -272,7 +280,11 @@ export default function DeviceSettingsPage({ params }: ParamsProps) {
   const handleSyncUsers = async () => {
     setSyncingUsers(true);
     setSyncingUsersProgress(0);
-    const interval = setInterval(() => setSyncingUsersProgress(p => p >= 95 ? p : p + Math.floor(Math.random() * 10) + 2), 400);
+    const interval = setInterval(() => setSyncingUsersProgress(p => {
+      if (p >= 95) return p;
+      const next = p + Math.floor(Math.random() * 10) + 2;
+      return next > 95 ? 95 : next;
+    }), 400);
     try {
       const res = await axios.post(`/api/devices/${id}/sync-users`);
       clearInterval(interval);
@@ -558,7 +570,11 @@ export default function DeviceSettingsPage({ params }: ParamsProps) {
   ) => {
     setLoadingState(true);
     setProgressState(0);
-    const interval = setInterval(() => setProgressState((p: number) => p >= 90 ? p : p + Math.floor(Math.random() * 15) + 5), 300);
+    const interval = setInterval(() => setProgressState((p: number) => {
+      if (p >= 90) return p;
+      const next = p + Math.floor(Math.random() * 15) + 5;
+      return next > 90 ? 90 : next;
+    }), 300);
     try {
       const res = await axios.post(`/api/devices/${id}/${apiPath}`, payload);
       clearInterval(interval);
@@ -707,7 +723,7 @@ export default function DeviceSettingsPage({ params }: ParamsProps) {
     });
   };
 
-  if (loading) {
+  if (loading || !device) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
         <RefreshCw className="h-8 w-8 text-blue-500 animate-spin" />
