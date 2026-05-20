@@ -243,55 +243,71 @@ export default function SettingsForm() {
             </div>
 
             {/* Connection Status Card */}
-            <div className={`rounded-xl p-5 border-2 ${
+            <div className={`rounded-xl p-6 border-2 shadow-sm ${
                 connectionStatus.isConnected 
-                    ? "bg-green-50 border-green-200" 
+                    ? "bg-gradient-to-r from-green-50 to-emerald-50 border-green-300" 
                     : connectionStatus.connectionStatus === "connecting"
-                    ? "bg-blue-50 border-blue-200"
+                    ? "bg-gradient-to-r from-blue-50 to-cyan-50 border-blue-300"
                     : connectionStatus.connectionStatus === "error"
-                    ? "bg-red-50 border-red-200"
-                    : "bg-gray-50 border-gray-200"
+                    ? "bg-gradient-to-r from-red-50 to-rose-50 border-red-300"
+                    : "bg-gradient-to-r from-gray-50 to-slate-50 border-gray-300"
             }`}>
                 <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                        <div className={`p-3 rounded-full ${
+                    <div className="flex items-center gap-5">
+                        <div className={`p-4 rounded-2xl shadow-md ${
                             connectionStatus.isConnected 
-                                ? "bg-green-100" 
+                                ? "bg-gradient-to-br from-green-400 to-emerald-500" 
                                 : connectionStatus.connectionStatus === "connecting"
-                                ? "bg-blue-100"
+                                ? "bg-gradient-to-br from-blue-400 to-cyan-500"
                                 : connectionStatus.connectionStatus === "error"
-                                ? "bg-red-100"
-                                : "bg-gray-200"
+                                ? "bg-gradient-to-br from-red-400 to-rose-500"
+                                : "bg-gradient-to-br from-gray-400 to-slate-500"
                         }`}>
                             {connectionStatus.isConnected ? (
-                                <Wifi className="h-6 w-6 text-green-600" />
+                                <Wifi className="h-8 w-8 text-white" />
                             ) : connectionStatus.connectionStatus === "connecting" ? (
-                                <Loader2 className="h-6 w-6 text-blue-600 animate-spin" />
+                                <Loader2 className="h-8 w-8 text-white animate-spin" />
                             ) : connectionStatus.connectionStatus === "error" ? (
-                                <WifiOff className="h-6 w-6 text-red-600" />
+                                <WifiOff className="h-8 w-8 text-white" />
                             ) : (
-                                <WifiOff className="h-6 w-6 text-gray-500" />
+                                <WifiOff className="h-8 w-8 text-white" />
                             )}
                         </div>
                         <div>
-                            <h3 className="font-bold text-lg">
-                                {connectionStatus.isConnected 
-                                    ? "الاتصال نشط ومستمر" 
-                                    : connectionStatus.connectionStatus === "connecting"
-                                    ? "جاري الاتصال..."
-                                    : connectionStatus.connectionStatus === "error"
-                                    ? "فشل الاتصال"
-                                    : "غير متصل"}
-                            </h3>
-                            <div className="flex items-center gap-4 mt-1 text-sm">
-                                <span className={`font-medium ${
+                            <div className="flex items-center gap-3">
+                                <h3 className={`font-extrabold text-2xl ${
                                     connectionStatus.isConnected 
                                         ? "text-green-700" 
                                         : connectionStatus.connectionStatus === "connecting"
                                         ? "text-blue-700"
                                         : connectionStatus.connectionStatus === "error"
                                         ? "text-red-700"
-                                        : "text-gray-600"
+                                        : "text-gray-700"
+                                }`}>
+                                    {connectionStatus.isConnected 
+                                        ? "متصل" 
+                                        : connectionStatus.connectionStatus === "connecting"
+                                        ? "جاري الاتصال..."
+                                        : connectionStatus.connectionStatus === "error"
+                                        ? "فشل الاتصال"
+                                        : "غير متصل"}
+                                </h3>
+                                {connectionStatus.isConnected && (
+                                    <span className="flex h-3 w-3">
+                                        <span className="animate-ping absolute inline-flex h-3 w-3 rounded-full bg-green-400 opacity-75"></span>
+                                        <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
+                                    </span>
+                                )}
+                            </div>
+                            <div className="flex items-center gap-4 mt-2">
+                                <span className={`px-3 py-1 rounded-full text-sm font-bold ${
+                                    connectionStatus.isConnected 
+                                        ? "bg-green-200 text-green-800" 
+                                        : connectionStatus.connectionStatus === "connecting"
+                                        ? "bg-blue-200 text-blue-800"
+                                        : connectionStatus.connectionStatus === "error"
+                                        ? "bg-red-200 text-red-800"
+                                        : "bg-gray-200 text-gray-800"
                                 }`}>
                                     {connectionStatus.networkMode === "vpn" ? "VPN خاص" : 
                                      connectionStatus.networkMode === "port" ? "توجيه المنافذ" :
@@ -299,7 +315,7 @@ export default function SettingsForm() {
                                      connectionStatus.networkMode === "adms" ? "ADMS" : "محلي"}
                                 </span>
                                 {connectionStatus.lastConnectionTime && (
-                                    <span className="text-gray-500 flex items-center gap-1">
+                                    <span className="text-gray-600 text-sm font-medium flex items-center gap-2">
                                         <Clock className="h-4 w-4" />
                                         آخر اتصال: {new Date(connectionStatus.lastConnectionTime).toLocaleString('ar-EG')}
                                     </span>
@@ -311,16 +327,19 @@ export default function SettingsForm() {
                         <button
                             onClick={handleDisconnect}
                             disabled={isDisconnecting}
-                            className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-bold rounded-lg disabled:opacity-50 transition-colors flex items-center gap-2"
+                            className="px-6 py-3 bg-gradient-to-r from-red-500 to-rose-600 hover:from-red-600 hover:to-rose-700 text-white font-bold rounded-xl shadow-md disabled:opacity-50 transition-all transform hover:scale-105 flex items-center gap-2"
                         >
-                            {isDisconnecting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Power className="h-4 w-4" />}
+                            {isDisconnecting ? <Loader2 className="h-5 w-5 animate-spin" /> : <Power className="h-5 w-5" />}
                             فصل الاتصال
                         </button>
                     )}
                 </div>
                 {connectionStatus.connectionError && (
-                    <div className="mt-3 p-3 bg-red-100 rounded-lg border border-red-200">
-                        <p className="text-sm text-red-800 font-medium">{connectionStatus.connectionError}</p>
+                    <div className="mt-4 p-4 bg-red-100 rounded-xl border-2 border-red-300">
+                        <p className="text-sm text-red-800 font-bold flex items-center gap-2">
+                            <AlertTriangle className="h-5 w-5" />
+                            {connectionStatus.connectionError}
+                        </p>
                     </div>
                 )}
             </div>
