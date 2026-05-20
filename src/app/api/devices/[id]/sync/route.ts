@@ -35,17 +35,15 @@ export async function POST(_req: Request, { params }: Params) {
             data: {
               name: user.name || `مستخدم ${user.userId}`,
               deviceUserId: user.userId,
-              deviceId: id,
-              role: String(user.role || 0)
+              deviceId: id
             }
           });
           employeesInserted++;
-        } else if (existingEmployee.name !== user.name || existingEmployee.role !== String(user.role)) {
+        } else if (existingEmployee.name !== user.name) {
           await prisma.employee.update({
             where: { id: existingEmployee.id },
             data: {
-              name: user.name || `مستخدم ${user.userId}`,
-              role: String(user.role || 0)
+              name: user.name || `مستخدم ${user.userId}`
             }
           });
         }

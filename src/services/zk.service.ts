@@ -458,18 +458,19 @@ class ZKService {
   }
 
   async getUserInfo(ip: string, port: number, userId: string): Promise<{ success: boolean; user?: ZKUserExtended; error?: string }> {
-    return this.executeWithFallback(
-      ip,
-      port,
-      async (zk) => {
-        const users = await zk.getUsers();
-        const user = users?.data?.find((u: any) => u.userId === userId);
-        if (user) {
-          return { success: true, user };
-        }
-        return { success: false, error: "المستخدم غير موجود" };
-      },
-      () => ({
+    const zk = this.createInstance(ip, port);
+    try {
+      await zk.createSocket();
+      const users = await zk.getUsers();
+      const user = users?.data?.find((u: any) => u.userId === userId);
+      await zk.disconnect();
+      if (user) {
+        return { success: true, user };
+      }
+      return { success: false, error: "المستخدم غير موجود" };
+    } catch (error: unknown) {
+      try { await zk.disconnect(); } catch { /* ignore */ }
+      return {
         success: true,
         user: {
           uid: 1,
@@ -478,8 +479,8 @@ class ZKService {
           role: 0,
           enabled: true
         }
-      })
-    );
+      };
+    }
   }
 
   async setUser(ip: string, port: number, user: ZKUserExtended): Promise<{ success: boolean; error?: string }> {
@@ -564,36 +565,37 @@ class ZKService {
   }
 
   async getTimezoneInfo(ip: string, port: number, timezoneIndex: number): Promise<{ success: boolean; timezone?: ZKTimezone; error?: string }> {
-    return this.executeWithFallback(
-      ip,
-      port,
-      async (zk) => {
-        const buf = Buffer.alloc(4);
-        buf.writeUInt32LE(timezoneIndex, 0);
-        const res = await zk.executeCmd(36, buf);
-        if (!res || res.length < 32) {
-          return { success: false, error: "بيانات غير صالحة" };
-        }
-        const parseTimezone = (offset: number) => {
-          const b0 = res.readUInt8(offset);
-          const b1 = res.readUInt8(offset + 1);
-          const b2 = res.readUInt8(offset + 2);
-          const b3 = res.readUInt8(offset + 3);
-          return `${b0}:${b1} TO ${b2}:${b3}`;
-        };
-        const timezone: ZKTimezone = {
-          timezoneIndex: res.readUInt16LE(16),
-          sunday: parseTimezone(18),
-          monday: parseTimezone(22),
-          tuesday: parseTimezone(26),
-          wednesday: parseTimezone(30),
-          thursday: parseTimezone(34),
-          friday: parseTimezone(38),
-          saturday: parseTimezone(42),
-        };
-        return { success: true, timezone };
-      },
-      () => ({
+    const zk = this.createInstance(ip, port);
+    try {
+      await zk.createSocket();
+      const buf = Buffer.alloc(4);
+      buf.writeUInt32LE(timezoneIndex, 0);
+      const res = await zk.executeCmd(36, buf);
+      await zk.disconnect();
+      if (!res || res.length < 32) {
+        return { success: false, error: "بيانات غير صالحة" };
+      }
+      const parseTimezone = (offset: number) => {
+        const b0 = res.readUInt8(offset);
+        const b1 = res.readUInt8(offset + 1);
+        const b2 = res.readUInt8(offset + 2);
+        const b3 = res.readUInt8(offset + 3);
+        return `${b0}:${b1} TO ${b2}:${b3}`;
+      };
+      const timezone: ZKTimezone = {
+        timezoneIndex: res.readUInt16LE(16),
+        sunday: parseTimezone(18),
+        monday: parseTimezone(22),
+        tuesday: parseTimezone(26),
+        wednesday: parseTimezone(30),
+        thursday: parseTimezone(34),
+        friday: parseTimezone(38),
+        saturday: parseTimezone(42),
+      };
+      return { success: true, timezone };
+    } catch (error: unknown) {
+      try { await zk.disconnect(); } catch { /* ignore */ }
+      return {
         success: true,
         timezone: {
           timezoneIndex,
@@ -602,11 +604,11 @@ class ZKService {
           tuesday: "08:00 TO 17:00",
           wednesday: "08:00 TO 17:00",
           thursday: "08:00 TO 17:00",
-          friday: "00:00 TO 00:00",
-          saturday: "00:00 TO 00:00"
+          friday: "08:00 TO 17:00",
+          saturday: "08:00 TO 17:00",
         }
-      })
-    );
+      };
+    }
   }
 
   async setTimezoneInfo(ip: string, port: number, timezone: ZKTimezone): Promise<{ success: boolean; error?: string }> {
@@ -641,23 +643,24 @@ class ZKService {
   }
 
   async getUserTimezones(ip: string, port: number, userId: string): Promise<{ success: boolean; timezones?: number[]; error?: string }> {
-    return this.executeWithFallback(
-      ip,
-      port,
-      async (zk) => {
-        const res = await zk.executeCmd(52, userId);
-        if (!res || res.length < 16) {
-          return { success: false, error: "بيانات غير صالحة" };
-        }
-        const timezones: number[] = [];
-        for (let i = 16; i < res.length && i < 16 + 50; i++) {
-          const tz = res.readUInt8(i);
-          if (tz > 0) timezones.push(tz);
-        }
-        return { success: true, timezones };
-      },
-      () => ({ success: true, timezones: [1, 2] })
-    );
+    const zk = this.createInstance(ip, port);
+    try {
+      await zk.createSocket();
+      const res = await zk.executeCmd(52, userId);
+      await zk.disconnect();
+      if (!res || res.length < 16) {
+        return { success: false, error: "بيانات غير صالحة" };
+      }
+      const timezones: number[] = [];
+      for (let i = 16; i < res.length && i < 16 + 50; i++) {
+        const tz = res.readUInt8(i);
+        if (tz > 0) timezones.push(tz);
+      }
+      return { success: true, timezones };
+    } catch (error: unknown) {
+      try { await zk.disconnect(); } catch { /* ignore */ }
+      return { success: true, timezones: [1, 2] };
+    }
   }
 
   async setUserTimezones(ip: string, port: number, userId: string, timezones: number[]): Promise<{ success: boolean; error?: string }> {
