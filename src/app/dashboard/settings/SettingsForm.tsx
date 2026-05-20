@@ -457,7 +457,9 @@ export default function SettingsForm() {
                                 </div>
                                 <h2 className="text-xl font-bold text-gray-900">إعدادات الاتصال عبر شبكة خاصة (VPN)</h2>
                             </div>
-                            {formData.networkMode === "vpn" && (
+                            {connectionStatus.isConnected && connectionStatus.networkMode === "vpn" ? (
+                                <span className="bg-green-100 text-green-800 text-xs px-3 py-1 rounded-full font-bold border border-green-200">حالة اتصال السيرفر بـ VPN</span>
+                            ) : formData.networkMode === "vpn" && (
                                 <span className="bg-blue-100 text-blue-800 text-xs px-3 py-1 rounded-full font-bold border border-blue-200">الإعداد المحفوظ</span>
                             )}
                         </div>
@@ -536,11 +538,18 @@ export default function SettingsForm() {
                                     {isTesting && <Loader2 className="h-4 w-4 animate-spin" />}
                                     اختبار الاتصال
                                 </button>
-                                <button disabled={isSaving || isTesting || isConnecting} onClick={() => handleConnect("vpn")} className="flex-1 py-3 bg-green-600 hover:bg-green-700 text-white font-bold rounded-lg disabled:opacity-50 transition-colors flex justify-center items-center gap-2">
-                                    {isConnecting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Shield className="h-4 w-4" />}
-                                    {isConnecting ? "جاري الاتصال..." : "اتصال دائم"}
-                                </button>
-                                <button disabled={isSaving || isTesting || isConnecting} onClick={() => handleSave("vpn")} className="flex-1 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg disabled:opacity-50 transition-colors flex justify-center items-center gap-2">
+                                {connectionStatus.isConnected && connectionStatus.networkMode === "vpn" ? (
+                                    <button disabled={isDisconnecting || isSaving || isTesting} onClick={handleDisconnect} className="flex-1 py-3 bg-red-600 hover:bg-red-700 text-white font-bold rounded-lg disabled:opacity-50 transition-colors flex justify-center items-center gap-2">
+                                        {isDisconnecting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Power className="h-4 w-4" />}
+                                        {isDisconnecting ? "جاري الفصل..." : "فصل الاتصال"}
+                                    </button>
+                                ) : (
+                                    <button disabled={isSaving || isTesting || isConnecting} onClick={() => handleConnect("vpn")} className="flex-1 py-3 bg-green-600 hover:bg-green-700 text-white font-bold rounded-lg disabled:opacity-50 transition-colors flex justify-center items-center gap-2">
+                                        {isConnecting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Shield className="h-4 w-4" />}
+                                        {isConnecting ? "جاري الاتصال..." : "اتصال دائم"}
+                                    </button>
+                                )}
+                                <button disabled={isSaving || isTesting || isConnecting || isDisconnecting} onClick={() => handleSave("vpn")} className="flex-1 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg disabled:opacity-50 transition-colors flex justify-center items-center gap-2">
                                     {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
                                     {isSaving ? "جاري الحفظ..." : "حفظ فقط"}
                                 </button>
