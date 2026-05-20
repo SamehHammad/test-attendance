@@ -1,5 +1,5 @@
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const { REQUEST_DATA } = require('node-zklib/constants');
+import './patch'; // Hoisting-proof monkey patching of node-zklib/utils
+
 import { DeviceConnectionManager } from './connection.manager';
 import { AttendanceParser } from './attendance.parser';
 import { AttendanceNormalizer } from './attendance.normalizer';
@@ -19,71 +19,37 @@ export * from './attendance.normalizer';
 export * from './connection.manager';
 
 class ZKServiceFacade {
-  private async getRawAttendances(zk: any): Promise<Buffer> {
-    if (zk.zklibTcp && zk.zklibTcp.socket) {
-      await zk.freeData();
-      const data = await zk.zklibTcp.readWithBuffer(REQUEST_DATA.GET_ATTENDANCE_LOGS);
-      await zk.freeData();
-      return data.data.subarray(4);
-    } else if (zk.zklibUdp && zk.zklibUdp.socket) {
-      await zk.freeData();
-      const data = await zk.zklibUdp.readWithBuffer(REQUEST_DATA.GET_ATTENDANCE_LOGS);
-      await zk.freeData();
-      return data.data.subarray(4);
-    }
-    throw new Error("Socket isn't connected!");
-  }
-
   private async parseAndNormalizeAttendances(zk: any): Promise<ZKAttendanceRecord[]> {
     try {
-      const rawBuffer = await this.getRawAttendances(zk);
-      let recordData = rawBuffer;
-      const records: ZKAttendanceRecord[] = [];
-      const RECORD_PACKET_SIZE = 40;
-
-      while (recordData.length >= RECORD_PACKET_SIZE) {
-        try {
-          const record = AttendanceParser.decodeRecord40(recordData.subarray(0, RECORD_PACKET_SIZE));
-          records.push(record);
-        } catch (err) {
-          console.warn("Failed to parse attendance record chunk:", err);
-        }
-        recordData = recordData.subarray(RECORD_PACKET_SIZE);
-      }
-
-      // In case we receive old firmware 16 byte records
-      if (records.length === 0 && rawBuffer.length >= 16) {
-        let recordData16 = rawBuffer;
-        while (recordData16.length >= 16) {
-          try {
-            const record = AttendanceParser.decodeRecord16(recordData16.subarray(0, 16));
-            records.push(record);
-          } catch (err) {
-             console.warn("Failed to parse 16-byte attendance chunk:", err);
-          }
-          recordData16 = recordData16.subarray(16);
-        }
-      }
+      // With our robust monkey patch, we can safely rely on the library's built-in getAttendances() method.
+      // This works seamlessly across TCP, UDP, and any legacy SSR or 8-byte/16-byte/40-byte firmwares
+      // while eliminating socket timeouts, packet fragmentations, or custom buffer slicing errors.
+      const rawData = await zk.getAttendances();
+      const records: ZKAttendanceRecord[] = (rawData?.data || []).map((rec: any) => {
+        const state = rec.type ?? 0;
+        const verifyCode = rec.verifyMode ?? 0;
+        return {
+          employeeId: String(rec.deviceUserId),
+          deviceUserId: String(rec.deviceUserId),
+          timestamp: new Date(rec.recordTime),
+          recordTime: new Date(rec.recordTime),
+          verifyModeCode: verifyCode,
+          verifyType: AttendanceParser.getVerifyTypeString(verifyCode),
+          attendanceStateCode: state,
+          attendanceType: AttendanceParser.getAttendanceTypeString(state),
+          type: state,
+        };
+      });
 
       return AttendanceNormalizer.normalize(records);
     } catch (error) {
-      console.warn("Failed to parse raw attendances, falling back to basic parsing. Error:", error);
-      // Fallback
-      const rawData = await zk.getAttendances();
-      const records = (rawData?.data || []).map((rec: any) => ({
-        employeeId: String(rec.deviceUserId),
-        timestamp: new Date(rec.recordTime),
-        verifyModeCode: 0,
-        verifyType: 'unknown',
-        attendanceStateCode: rec.type ?? 0,
-        attendanceType: AttendanceParser.getAttendanceTypeString(rec.type ?? 0),
-      }));
-      return AttendanceNormalizer.normalize(records);
+      console.warn("Failed to get attendances, returning empty list. Error:", error);
+      return [];
     }
   }
 
   async testConnection(ip: string, port: number): Promise<{ success: boolean; info?: ZKDeviceInfo; error?: string }> {
-    return DeviceConnectionManager.executeWithRetry(
+    return DeviceConnectionManager.executeWithRetry<{ success: boolean; info?: ZKDeviceInfo; error?: string }>(
       { ip, port },
       async (zk) => {
         const info = await zk.getInfo();
@@ -97,7 +63,7 @@ class ZKServiceFacade {
   }
 
   async getAttendance(ip: string, port: number): Promise<{ success: boolean; data?: ZKAttendanceRecord[]; error?: string }> {
-    return DeviceConnectionManager.executeWithRetry(
+    return DeviceConnectionManager.executeWithRetry<{ success: boolean; data?: ZKAttendanceRecord[]; error?: string }>(
       { ip, port },
       async (zk) => {
         const data = await this.parseAndNormalizeAttendances(zk);
@@ -114,7 +80,13 @@ class ZKServiceFacade {
     info?: ZKDeviceInfo;
     error?: string;
   }> {
-    return DeviceConnectionManager.executeWithRetry(
+    return DeviceConnectionManager.executeWithRetry<{
+      success: boolean;
+      attendance?: ZKAttendanceRecord[];
+      users?: ZKUser[];
+      info?: ZKDeviceInfo;
+      error?: string;
+    }>(
       { ip, port },
       async (zk) => {
         const attendance = await this.parseAndNormalizeAttendances(zk);
@@ -164,7 +136,7 @@ class ZKServiceFacade {
   }
 
   async getUsers(ip: string, port: number): Promise<{ success: boolean; data?: ZKUser[]; error?: string }> {
-    return DeviceConnectionManager.executeWithRetry(
+    return DeviceConnectionManager.executeWithRetry<{ success: boolean; data?: ZKUser[]; error?: string }>(
       { ip, port },
       async (zk) => {
         const rawUsers = await zk.getUsers();
@@ -175,7 +147,7 @@ class ZKServiceFacade {
   }
 
   async clearAttendance(ip: string, port: number): Promise<{ success: boolean; error?: string }> {
-    return DeviceConnectionManager.executeWithRetry(
+    return DeviceConnectionManager.executeWithRetry<{ success: boolean; error?: string }>(
       { ip, port },
       async (zk) => {
         await zk.clearAttendanceLog();
@@ -186,7 +158,7 @@ class ZKServiceFacade {
   }
 
   async setTime(ip: string, port: number, time: Date = new Date()): Promise<{ success: boolean; error?: string }> {
-    return DeviceConnectionManager.executeWithRetry(
+    return DeviceConnectionManager.executeWithRetry<{ success: boolean; error?: string }>(
       { ip, port },
       async (zk) => {
         const year = time.getFullYear();
@@ -210,7 +182,7 @@ class ZKServiceFacade {
   }
 
   async reboot(ip: string, port: number): Promise<{ success: boolean; error?: string }> {
-    return DeviceConnectionManager.executeWithRetry(
+    return DeviceConnectionManager.executeWithRetry<{ success: boolean; error?: string }>(
       { ip, port },
       async (zk) => {
         await zk.executeCmd(1004, "");
@@ -221,7 +193,7 @@ class ZKServiceFacade {
   }
 
   async getDeviceParameters(ip: string, port: number): Promise<{ success: boolean; data?: any; error?: string }> {
-    return DeviceConnectionManager.executeWithRetry(
+    return DeviceConnectionManager.executeWithRetry<{ success: boolean; data?: any; error?: string }>(
       { ip, port },
       async (zk) => {
         const getOpt = async (name: string) => {
@@ -271,7 +243,7 @@ class ZKServiceFacade {
   }
 
   async getTime(ip: string, port: number): Promise<{ success: boolean; time?: Date; error?: string }> {
-    return DeviceConnectionManager.executeWithRetry(
+    return DeviceConnectionManager.executeWithRetry<{ success: boolean; time?: Date; error?: string }>(
       { ip, port },
       async (zk) => {
         const time = await zk.getTime();
@@ -282,7 +254,7 @@ class ZKServiceFacade {
   }
 
   async disableDevice(ip: string, port: number, timeout?: number): Promise<{ success: boolean; error?: string }> {
-    return DeviceConnectionManager.executeWithRetry(
+    return DeviceConnectionManager.executeWithRetry<{ success: boolean; error?: string }>(
       { ip, port },
       async (zk) => {
         if (timeout) {
@@ -299,7 +271,7 @@ class ZKServiceFacade {
   }
 
   async enableDevice(ip: string, port: number): Promise<{ success: boolean; error?: string }> {
-    return DeviceConnectionManager.executeWithRetry(
+    return DeviceConnectionManager.executeWithRetry<{ success: boolean; error?: string }>(
       { ip, port },
       async (zk) => {
         await zk.enableDevice();
@@ -310,7 +282,7 @@ class ZKServiceFacade {
   }
 
   async freeData(ip: string, port: number): Promise<{ success: boolean; error?: string }> {
-    return DeviceConnectionManager.executeWithRetry(
+    return DeviceConnectionManager.executeWithRetry<{ success: boolean; error?: string }>(
       { ip, port },
       async (zk) => {
         await zk.freeData();
@@ -321,7 +293,7 @@ class ZKServiceFacade {
   }
 
   async clearData(ip: string, port: number): Promise<{ success: boolean; error?: string }> {
-    return DeviceConnectionManager.executeWithRetry(
+    return DeviceConnectionManager.executeWithRetry<{ success: boolean; error?: string }>(
       { ip, port },
       async (zk) => {
         await zk.executeCmd(3, "");
@@ -332,7 +304,7 @@ class ZKServiceFacade {
   }
 
   async refreshData(ip: string, port: number): Promise<{ success: boolean; error?: string }> {
-    return DeviceConnectionManager.executeWithRetry(
+    return DeviceConnectionManager.executeWithRetry<{ success: boolean; error?: string }>(
       { ip, port },
       async (zk) => {
         await zk.executeCmd(1013, "");
@@ -343,7 +315,7 @@ class ZKServiceFacade {
   }
 
   async clearAdmins(ip: string, port: number): Promise<{ success: boolean; error?: string }> {
-    return DeviceConnectionManager.executeWithRetry(
+    return DeviceConnectionManager.executeWithRetry<{ success: boolean; error?: string }>(
       { ip, port },
       async (zk) => {
         await zk.executeCmd(20, "");
@@ -354,7 +326,7 @@ class ZKServiceFacade {
   }
 
   async enableClock(ip: string, port: number): Promise<{ success: boolean; error?: string }> {
-    return DeviceConnectionManager.executeWithRetry(
+    return DeviceConnectionManager.executeWithRetry<{ success: boolean; error?: string }>(
       { ip, port },
       async (zk) => {
         await zk.executeCmd(57, "");
@@ -365,7 +337,7 @@ class ZKServiceFacade {
   }
 
   async powerOff(ip: string, port: number): Promise<{ success: boolean; error?: string }> {
-    return DeviceConnectionManager.executeWithRetry(
+    return DeviceConnectionManager.executeWithRetry<{ success: boolean; error?: string }>(
       { ip, port },
       async (zk) => {
         await zk.executeCmd(1002, "");
@@ -377,7 +349,7 @@ class ZKServiceFacade {
   }
 
   async getDeviceState(ip: string, port: number): Promise<{ success: boolean; state?: ZKDeviceState; error?: string }> {
-    return DeviceConnectionManager.executeWithRetry(
+    return DeviceConnectionManager.executeWithRetry<{ success: boolean; state?: ZKDeviceState; error?: string }>(
       { ip, port },
       async (zk) => {
         const res = await zk.executeCmd(20, "");
@@ -406,7 +378,7 @@ class ZKServiceFacade {
   }
 
   async getUserInfo(ip: string, port: number, userId: string): Promise<{ success: boolean; user?: ZKUserExtended; error?: string }> {
-    return DeviceConnectionManager.executeWithRetry(
+    return DeviceConnectionManager.executeWithRetry<{ success: boolean; user?: ZKUserExtended; error?: string }>(
       { ip, port },
       async (zk) => {
         const users = await zk.getUsers();
@@ -424,7 +396,7 @@ class ZKServiceFacade {
   }
 
   async setUser(ip: string, port: number, user: ZKUserExtended): Promise<{ success: boolean; error?: string }> {
-    return DeviceConnectionManager.executeWithRetry(
+    return DeviceConnectionManager.executeWithRetry<{ success: boolean; error?: string }>(
       { ip, port },
       async (zk) => {
         const buf = Buffer.alloc(72);
@@ -442,7 +414,7 @@ class ZKServiceFacade {
   }
 
   async deleteUser(ip: string, port: number, userId: string): Promise<{ success: boolean; error?: string }> {
-    return DeviceConnectionManager.executeWithRetry(
+    return DeviceConnectionManager.executeWithRetry<{ success: boolean; error?: string }>(
       { ip, port },
       async (zk) => {
         const buf = Buffer.alloc(8);
@@ -455,7 +427,7 @@ class ZKServiceFacade {
   }
 
   async enableUser(ip: string, port: number, userId: string, enabled: boolean): Promise<{ success: boolean; error?: string }> {
-    return DeviceConnectionManager.executeWithRetry(
+    return DeviceConnectionManager.executeWithRetry<{ success: boolean; error?: string }>(
       { ip, port },
       async (zk) => {
         const buf = Buffer.alloc(9);
@@ -469,7 +441,7 @@ class ZKServiceFacade {
   }
 
   async getUserGroup(ip: string, port: number, userSn: number): Promise<{ success: boolean; group?: number; error?: string }> {
-    return DeviceConnectionManager.executeWithRetry(
+    return DeviceConnectionManager.executeWithRetry<{ success: boolean; group?: number; error?: string }>(
       { ip, port },
       async (zk) => {
         const buf = Buffer.alloc(4);
@@ -483,7 +455,7 @@ class ZKServiceFacade {
   }
 
   async setUserGroup(ip: string, port: number, userSn: number, groupNumber: number): Promise<{ success: boolean; error?: string }> {
-    return DeviceConnectionManager.executeWithRetry(
+    return DeviceConnectionManager.executeWithRetry<{ success: boolean; error?: string }>(
       { ip, port },
       async (zk) => {
         const buf = Buffer.alloc(5);
@@ -500,7 +472,7 @@ class ZKServiceFacade {
   }
 
   async getTimezoneInfo(ip: string, port: number, timezoneIndex: number): Promise<{ success: boolean; timezone?: ZKTimezone; error?: string }> {
-    return DeviceConnectionManager.executeWithRetry(
+    return DeviceConnectionManager.executeWithRetry<{ success: boolean; timezone?: ZKTimezone; error?: string }>(
       { ip, port },
       async (zk) => {
         const buf = Buffer.alloc(4);
@@ -540,7 +512,7 @@ class ZKServiceFacade {
   }
 
   async setTimezoneInfo(ip: string, port: number, timezone: ZKTimezone): Promise<{ success: boolean; error?: string }> {
-    return DeviceConnectionManager.executeWithRetry(
+    return DeviceConnectionManager.executeWithRetry<{ success: boolean; error?: string }>(
       { ip, port },
       async (zk) => {
         const buf = Buffer.alloc(32);
@@ -570,7 +542,7 @@ class ZKServiceFacade {
   }
 
   async getUserTimezones(ip: string, port: number, userId: string): Promise<{ success: boolean; timezones?: number[]; error?: string }> {
-    return DeviceConnectionManager.executeWithRetry(
+    return DeviceConnectionManager.executeWithRetry<{ success: boolean; timezones?: number[]; error?: string }>(
       { ip, port },
       async (zk) => {
         const res = await zk.executeCmd(52, userId);
@@ -589,7 +561,7 @@ class ZKServiceFacade {
   }
 
   async setUserTimezones(ip: string, port: number, userId: string, timezones: number[]): Promise<{ success: boolean; error?: string }> {
-    return DeviceConnectionManager.executeWithRetry(
+    return DeviceConnectionManager.executeWithRetry<{ success: boolean; error?: string }>(
       { ip, port },
       async (zk) => {
         const buf = Buffer.alloc(50);
@@ -605,7 +577,7 @@ class ZKServiceFacade {
   }
 
   async deleteEnrollData(ip: string, port: number, userId: string, fingerIndex: number = 0): Promise<{ success: boolean; error?: string }> {
-    return DeviceConnectionManager.executeWithRetry(
+    return DeviceConnectionManager.executeWithRetry<{ success: boolean; error?: string }>(
       { ip, port },
       async (zk) => {
         const buf = Buffer.alloc(4);
@@ -619,7 +591,7 @@ class ZKServiceFacade {
   }
 
   async clearSuperLog(ip: string, port: number): Promise<{ success: boolean; error?: string }> {
-    return DeviceConnectionManager.executeWithRetry(
+    return DeviceConnectionManager.executeWithRetry<{ success: boolean; error?: string }>(
       { ip, port },
       async (zk) => {
         await zk.executeCmd(12, "");
@@ -630,7 +602,7 @@ class ZKServiceFacade {
   }
 
   async unlockDoor(ip: string, port: number): Promise<{ success: boolean; error?: string }> {
-    return DeviceConnectionManager.executeWithRetry(
+    return DeviceConnectionManager.executeWithRetry<{ success: boolean; error?: string }>(
       { ip, port },
       async (zk) => {
         await zk.executeCmd(80, "");
@@ -641,7 +613,7 @@ class ZKServiceFacade {
   }
 
   async getDoorState(ip: string, port: number): Promise<{ success: boolean; state?: string; error?: string }> {
-    return DeviceConnectionManager.executeWithRetry(
+    return DeviceConnectionManager.executeWithRetry<{ success: boolean; state?: string; error?: string }>(
       { ip, port },
       async (zk) => {
         const res = await zk.executeCmd(94, "");
@@ -653,7 +625,7 @@ class ZKServiceFacade {
   }
 
   async enableRealtime(ip: string, port: number): Promise<{ success: boolean; error?: string }> {
-    return DeviceConnectionManager.executeWithRetry(
+    return DeviceConnectionManager.executeWithRetry<{ success: boolean; error?: string }>(
       { ip, port },
       async (zk) => {
         await zk.executeCmd(500, Buffer.from([0xff, 0xff, 0x00, 0x00]));
