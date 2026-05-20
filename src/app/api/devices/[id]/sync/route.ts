@@ -23,6 +23,35 @@ export async function POST(_req: Request, { params }: Params) {
     console.log(`إجمالي السجلات: ${result.attendance.length}`);
     console.log("==========================================================");
 
+    // Upsert Users (Employees)
+    let employeesInserted = 0;
+    if (result.users && result.users.length > 0) {
+      for (const user of result.users) {
+        const existingEmployee = await prisma.employee.findFirst({
+          where: { deviceId: id, deviceUserId: user.userId }
+        });
+        if (!existingEmployee) {
+          await prisma.employee.create({
+            data: {
+              name: user.name || `مستخدم ${user.userId}`,
+              deviceUserId: user.userId,
+              deviceId: id,
+              role: String(user.role || 0)
+            }
+          });
+          employeesInserted++;
+        } else if (existingEmployee.name !== user.name || existingEmployee.role !== String(user.role)) {
+          await prisma.employee.update({
+            where: { id: existingEmployee.id },
+            data: {
+              name: user.name || `مستخدم ${user.userId}`,
+              role: String(user.role || 0)
+            }
+          });
+        }
+      }
+    }
+
     // Upsert records
     let inserted = 0;
     for (const rec of result.attendance) {
@@ -34,7 +63,7 @@ export async function POST(_req: Request, { params }: Params) {
         },
       });
       if (!existing) {
-        // Try to find matching employee
+        // Find matching employee to link
         const employee = await prisma.employee.findFirst({
           where: { deviceUserId: rec.deviceUserId, deviceId: id },
         });

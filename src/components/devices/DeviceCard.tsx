@@ -33,13 +33,20 @@ interface DeviceCardProps {
 
 export function DeviceCard({ device, onEdit, onDelete, onRefresh, index }: DeviceCardProps) {
   const [testingConn, setTestingConn] = useState(false);
+  const [testingProgress, setTestingProgress] = useState(0);
   const [syncing, setSyncing] = useState(false);
+  const [syncProgress, setSyncProgress] = useState(0);
   const [menuOpen, setMenuOpen] = useState(false);
 
   const handleTestConnection = async () => {
     setTestingConn(true);
+    setTestingProgress(0);
+    const interval = setInterval(() => setTestingProgress(p => p >= 90 ? p : p + Math.floor(Math.random() * 15) + 5), 300);
     try {
       const res = await axios.post(`/api/devices/${device.id}/test-connection`);
+      clearInterval(interval);
+      setTestingProgress(100);
+      await new Promise(r => setTimeout(r, 400));
       if (res.data.success) {
         toast.success(`✅ الجهاز ${device.name} متصل بنجاح`);
       } else {
@@ -47,33 +54,37 @@ export function DeviceCard({ device, onEdit, onDelete, onRefresh, index }: Devic
       }
       onRefresh();
     } catch {
+      clearInterval(interval);
       toast.error("فشل في اختبار الاتصال");
     } finally {
+      clearInterval(interval);
       setTestingConn(false);
+      setTestingProgress(0);
     }
   };
 
   const handleSync = async () => {
     setSyncing(true);
+    setSyncProgress(0);
+    const interval = setInterval(() => setSyncProgress(p => p >= 90 ? p : p + Math.floor(Math.random() * 15) + 5), 300);
     try {
       const res = await axios.post(`/api/devices/${device.id}/sync`);
+      clearInterval(interval);
+      setSyncProgress(100);
+      await new Promise(r => setTimeout(r, 400));
       if (res.data.success) {
         toast.success(res.data.message);
-        console.log("============= سجلات الحضور الخام (في المتصفح) =============");
-        console.table(res.data.data);
-        console.log("============= المستخدمين المسجلين بالجهاز =============");
-        console.table(res.data.debug?.users);
-        console.log("============= معلومات نظام الجهاز =============");
-        console.dir(res.data.debug?.info, { depth: null });
-        console.log("=========================================================");
       } else {
         toast.error(res.data.error);
       }
       onRefresh();
     } catch {
+      clearInterval(interval);
       toast.error("فشل في مزامنة البيانات");
     } finally {
+      clearInterval(interval);
       setSyncing(false);
+      setSyncProgress(0);
     }
   };
 
@@ -222,20 +233,30 @@ export function DeviceCard({ device, onEdit, onDelete, onRefresh, index }: Devic
           variant="outline"
           onClick={handleTestConnection}
           loading={testingConn}
-          className="flex-1 text-xs font-semibold"
+          className="flex-1 text-xs font-semibold relative overflow-hidden"
         >
-          <Wifi className="h-3.5 w-3.5" />
-          اختبار الاتصال
+          {testingConn && testingProgress > 0 && (
+            <div className="absolute top-0 right-0 h-full bg-blue-100" style={{ width: `${testingProgress}%`, transition: 'width 0.3s' }} />
+          )}
+          <span className="relative z-10 flex items-center gap-1 justify-center">
+            <Wifi className="h-3.5 w-3.5" />
+            {testingConn ? `جاري الاختبار (${testingProgress}%)` : "اختبار الاتصال"}
+          </span>
         </Button>
         <Button
           size="sm"
           variant="secondary"
           onClick={handleSync}
           loading={syncing}
-          className="flex-1 text-xs font-semibold"
+          className="flex-1 text-xs font-semibold relative overflow-hidden"
         >
-          <RefreshCw className="h-3.5 w-3.5" />
-          مزامنة
+          {syncing && syncProgress > 0 && (
+            <div className="absolute top-0 right-0 h-full bg-white/50" style={{ width: `${syncProgress}%`, transition: 'width 0.3s' }} />
+          )}
+          <span className="relative z-10 flex items-center gap-1 justify-center">
+            <RefreshCw className="h-3.5 w-3.5" />
+            {syncing ? `جاري المزامنة (${syncProgress}%)` : "مزامنة"}
+          </span>
         </Button>
       </div>
     </motion.div>

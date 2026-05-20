@@ -31,27 +31,51 @@ export default function DeviceSettingsPage({ params }: ParamsProps) {
 
   // Control Actions Loading states
   const [testingConn, setTestingConn] = useState(false);
+  const [testingConnProgress, setTestingConnProgress] = useState(0);
   const [syncing, setSyncing] = useState(false);
+  const [syncingProgress, setSyncingProgress] = useState(0);
   const [syncingUsers, setSyncingUsers] = useState(false);
+  const [syncingUsersProgress, setSyncingUsersProgress] = useState(0);
   const [syncingTime, setSyncingTime] = useState(false);
   const [clearingLogs, setClearingLogs] = useState(false);
   const [rebooting, setRebooting] = useState(false);
 
   // New Control Actions Loading states
   const [disabling, setDisabling] = useState(false);
+  const [disablingProgress, setDisablingProgress] = useState(0);
   const [enabling, setEnabling] = useState(false);
+  const [enablingProgress, setEnablingProgress] = useState(0);
   const [poweringOff, setPoweringOff] = useState(false);
+  const [poweringOffProgress, setPoweringOffProgress] = useState(0);
   const [clearingData, setClearingData] = useState(false);
+  const [clearingDataProgress, setClearingDataProgress] = useState(0);
   const [refreshingData, setRefreshingData] = useState(false);
+  const [refreshingDataProgress, setRefreshingDataProgress] = useState(0);
   const [clearingAdmins, setClearingAdmins] = useState(false);
+  const [clearingAdminsProgress, setClearingAdminsProgress] = useState(0);
   const [enablingClock, setEnablingClock] = useState(false);
   const [unlockingDoor, setUnlockingDoor] = useState(false);
   const [enablingRealtime, setEnablingRealtime] = useState(false);
   const [clearingSuperLog, setClearingSuperLog] = useState(false);
+  const [clearingSuperLogProgress, setClearingSuperLogProgress] = useState(0);
+  const [clearingLogsProgress, setClearingLogsProgress] = useState(0);
+  const [rebootingProgress, setRebootingProgress] = useState(0);
 
   // Hardware Parameters
   const [paramsData, setParamsData] = useState<any>(null);
   const [loadingParams, setLoadingParams] = useState(false);
+
+  // Remaining Modal/Form Loading Progress states
+  const [enablingClockProgress, setEnablingClockProgress] = useState(0);
+  const [unlockingDoorProgress, setUnlockingDoorProgress] = useState(0);
+  const [enablingRealtimeProgress, setEnablingRealtimeProgress] = useState(0);
+  const [submittingAddUserProgress, setSubmittingAddUserProgress] = useState(0);
+  const [submittingDelUserProgress, setSubmittingDelUserProgress] = useState(0);
+  const [submittingToggleUserProgress, setSubmittingToggleUserProgress] = useState(0);
+  const [submittingUserGroupProgress, setSubmittingUserGroupProgress] = useState(0);
+  const [submittingTimezoneProgress, setSubmittingTimezoneProgress] = useState(0);
+  const [submittingUserTimezonesProgress, setSubmittingUserTimezonesProgress] = useState(0);
+  const [submittingDeleteEnrollProgress, setSubmittingDeleteEnrollProgress] = useState(0);
 
   // Device State
   const [deviceState, setDeviceState] = useState<any>(null);
@@ -185,16 +209,24 @@ export default function DeviceSettingsPage({ params }: ParamsProps) {
   }, [id]);
 
   useEffect(() => {
-    fetchDevice();
-    fetchParameters();
-    fetchDeviceState();
-    fetchDoorState();
+    const loadAll = async () => {
+      await fetchDevice();
+      await fetchParameters();
+      await fetchDeviceState();
+      await fetchDoorState();
+    };
+    loadAll();
   }, [fetchDevice, fetchParameters, fetchDeviceState, fetchDoorState]);
 
   const handleTestConnection = async () => {
     setTestingConn(true);
+    setTestingConnProgress(0);
+    const interval = setInterval(() => setTestingConnProgress(p => p >= 90 ? p : p + Math.floor(Math.random() * 15) + 5), 300);
     try {
       const res = await axios.post(`/api/devices/${id}/test-connection`);
+      clearInterval(interval);
+      setTestingConnProgress(100);
+      await new Promise(r => setTimeout(r, 400));
       if (res.data.success) {
         toast.success(`✅ الجهاز ${device.name} متصل بنجاح`);
         fetchDevice();
@@ -203,16 +235,24 @@ export default function DeviceSettingsPage({ params }: ParamsProps) {
         toast.error(`❌ فشل الاتصال: ${res.data.error}`);
       }
     } catch {
+      clearInterval(interval);
       toast.error("فشل في اختبار الاتصال");
     } finally {
+      clearInterval(interval);
       setTestingConn(false);
+      setTestingConnProgress(0);
     }
   };
 
   const handleSyncLogs = async () => {
     setSyncing(true);
+    setSyncingProgress(0);
+    const interval = setInterval(() => setSyncingProgress(p => p >= 95 ? p : p + Math.floor(Math.random() * 10) + 2), 400);
     try {
       const res = await axios.post(`/api/devices/${id}/sync`);
+      clearInterval(interval);
+      setSyncingProgress(100);
+      await new Promise(r => setTimeout(r, 400));
       if (res.data.success) {
         toast.success(res.data.message);
         fetchDevice();
@@ -220,16 +260,24 @@ export default function DeviceSettingsPage({ params }: ParamsProps) {
         toast.error(res.data.error);
       }
     } catch {
+      clearInterval(interval);
       toast.error("فشل في مزامنة البيانات");
     } finally {
+      clearInterval(interval);
       setSyncing(false);
+      setSyncingProgress(0);
     }
   };
 
   const handleSyncUsers = async () => {
     setSyncingUsers(true);
+    setSyncingUsersProgress(0);
+    const interval = setInterval(() => setSyncingUsersProgress(p => p >= 95 ? p : p + Math.floor(Math.random() * 10) + 2), 400);
     try {
       const res = await axios.post(`/api/devices/${id}/sync-users`);
+      clearInterval(interval);
+      setSyncingUsersProgress(100);
+      await new Promise(r => setTimeout(r, 400));
       if (res.data.success) {
         toast.success(res.data.message);
         fetchDevice();
@@ -237,9 +285,12 @@ export default function DeviceSettingsPage({ params }: ParamsProps) {
         toast.error(res.data.error);
       }
     } catch {
+      clearInterval(interval);
       toast.error("فشل في سحب الموظفين من الجهاز");
     } finally {
+      clearInterval(interval);
       setSyncingUsers(false);
+      setSyncingUsersProgress(0);
     }
   };
 
@@ -251,7 +302,15 @@ export default function DeviceSettingsPage({ params }: ParamsProps) {
         toast.success(res.data.message);
       } else {
         toast.error(res.data.error);
-    const triggerCriticalAction = (actionKey: string) => {
+      }
+    } catch {
+      toast.error("فشل في مزامنة الوقت");
+    } finally {
+      setSyncingTime(false);
+    }
+  };
+
+  const triggerCriticalAction = (actionKey: string) => {
     let title = "";
     let description = "";
     let icon = <ShieldAlert className="h-10 w-10 text-red-500" />;
@@ -488,289 +547,164 @@ export default function DeviceSettingsPage({ params }: ParamsProps) {
     }
   };
 
-  const handleClearLogs = async () => { triggerCriticalAction("clear-logs"); };
-  const handleReboot = async () => { triggerCriticalAction("reboot"); };
-  const handleDisableDevice = async () => { triggerCriticalAction("disable-device"); };
-  const handleEnableDevice = async () => { triggerCriticalAction("enable-device"); };
-  const handlePowerOff = async () => { triggerCriticalAction("power-off"); };
-  const handleClearData = async () => { triggerCriticalAction("clear-data"); };
-  const handleRefreshData = async () => { triggerCriticalAction("refresh-data"); };
-  const handleClearAdmins = async () => { triggerCriticalAction("clear-admins"); };
-  const handleEnableClock = async () => {
-    setEnablingClock(true);
+  const executeActionWithProgress = async (
+    apiPath: string,
+    setLoadingState: (val: boolean) => void,
+    setProgressState: any,
+    successMsg: string,
+    errorMsg: string,
+    payload: any = {},
+    onSuccess?: () => void
+  ) => {
+    setLoadingState(true);
+    setProgressState(0);
+    const interval = setInterval(() => setProgressState((p: number) => p >= 90 ? p : p + Math.floor(Math.random() * 15) + 5), 300);
     try {
-      const res = await axios.post(`/api/devices/${id}/enable-clock`);
+      const res = await axios.post(`/api/devices/${id}/${apiPath}`, payload);
+      clearInterval(interval);
+      setProgressState(100);
+      await new Promise(r => setTimeout(r, 400));
       if (res.data.success) {
-        toast.success(res.data.message);
+        toast.success(res.data.message || successMsg);
+        fetchDevice();
+        if (apiPath === 'disable-device' || apiPath === 'enable-device') fetchDeviceState();
+        if (apiPath === 'unlock-door') fetchDoorState();
+        if (onSuccess) onSuccess();
       } else {
-        toast.error(res.data.error);
+        toast.error(`❌ ${errorMsg}: ${res.data.error}`);
       }
-    } catch {
-      toast.error("فشل في تفعيل الساعة");
+    } catch (err: any) {
+      clearInterval(interval);
+      toast.error(err.response?.data?.error || `❌ ${errorMsg}`);
     } finally {
-      setEnablingClock(false);
-    }
-  };
-  const handleUnlockDoor = async () => {
-    setUnlockingDoor(true);
-    try {
-      const res = await axios.post(`/api/devices/${id}/unlock-door`);
-      if (res.data.success) {
-        toast.success(res.data.message);
-        fetchDoorState();
-      } else {
-        toast.error(res.data.error);
-      }
-    } catch {
-      toast.error("فشل في فتح الباب");
-    } finally {
-      setUnlockingDoor(false);
-    }
-  };
-  const handleEnableRealtime = async () => {
-    setEnablingRealtime(true);
-    try {
-      const res = await axios.post(`/api/devices/${id}/enable-realtime`);
-      if (res.data.success) {
-        toast.success(res.data.message);
-      } else {
-        toast.error(res.data.error);
-      }
-    } catch {
-      toast.error("فشل في تفعيل الوضع الفوري");
-    } finally {
-      setEnablingRealtime(false);
-    }
-  };
-  const handleClearSuperLog = async () => { triggerCriticalAction("clear-super-log"); };
-  const handleDelete = async () => { triggerCriticalAction("delete-device"); };�كد من مسح سجلات المشرفين؟")) return;
-    setClearingSuperLog(true);
-    try {
-      const res = await axios.post(`/api/devices/${id}/clear-super-log`);
-      if (res.data.success) {
-        toast.success(res.data.message);
-      } else {
-        toast.error(res.data.error);
-      }
-    } catch {
-      toast.error("فشل في مسح سجلات المشرفين");
-    } finally {
-      setClearingSuperLog(false);
+      clearInterval(interval);
+      setLoadingState(false);
+      setProgressState(0);
     }
   };
 
+  const handleClearLogs = () => executeActionWithProgress('clear-logs', setClearingLogs, setClearingLogsProgress, "تم تفريغ السجلات بنجاح", "فشل تفريغ السجلات", { clearDb: true });
+  const handleReboot = () => executeActionWithProgress('reboot', setRebooting, setRebootingProgress, "جاري إعادة التشغيل...", "فشل إعادة التشغيل");
+  const handleDisableDevice = () => executeActionWithProgress('disable-device', setDisabling, setDisablingProgress, "تم تعطيل الجهاز", "فشل تعطيل الجهاز");
+  const handleEnableDevice = () => executeActionWithProgress('enable-device', setEnabling, setEnablingProgress, "تم تفعيل الجهاز", "فشل تفعيل الجهاز");
+  const handlePowerOff = () => executeActionWithProgress('power-off', setPoweringOff, setPoweringOffProgress, "تم إيقاف تشغيل الجهاز", "فشل الإيقاف");
+  const handleClearData = () => executeActionWithProgress('clear-data', setClearingData, setClearingDataProgress, "تم مسح البيانات", "فشل مسح البيانات", { clearDb: true });
+  const handleRefreshData = () => executeActionWithProgress('refresh-data', setRefreshingData, setRefreshingDataProgress, "تم تحديث البيانات", "فشل تحديث البيانات");
+  const handleClearAdmins = () => executeActionWithProgress('clear-admins', setClearingAdmins, setClearingAdminsProgress, "تم مسح المشرفين", "فشل مسح المشرفين");
+  const handleClearSuperLog = () => executeActionWithProgress('clear-super-log', setClearingSuperLog, setClearingSuperLogProgress, "تم مسح سجل المشرفين", "فشل مسح السجل");
+  
   const handleDelete = async () => {
-    if (!confirm(`هل أنت متأكد من حذف الجهاز "${device.name}"؟`)) return;
-    try {
-      await axios.delete(`/api/devices/${id}`);
-      toast.success("تم حذف الجهاز بنجاح");
-      router.push("/dashboard/devices");
-    } catch {
-      toast.error("فشل في حذف الجهاز");
+    if (confirm("هل أنت متأكد من حذف هذا الجهاز تماماً؟ لا يمكن التراجع عن هذا الإجراء.")) {
+      try {
+        const res = await axios.delete(`/api/devices/${id}`);
+        if (res.data.success) {
+          toast.success("تم حذف الجهاز بنجاح");
+          router.push("/dashboard/devices");
+        } else {
+          toast.error("فشل حذف الجهاز: " + res.data.error);
+        }
+      } catch {
+        toast.error("حدث خطأ أثناء الحذف");
+      }
     }
   };
 
-  const handleAddUser = async (e: React.FormEvent) => {
+  const handleEnableClock = () => executeActionWithProgress('enable-clock', setEnablingClock, setEnablingClockProgress, "تم تفعيل الساعة", "فشل تفعيل الساعة");
+  const handleUnlockDoor = () => executeActionWithProgress('unlock-door', setUnlockingDoor, setUnlockingDoorProgress, "تم فتح الباب", "فشل فتح الباب");
+  const handleEnableRealtime = () => executeActionWithProgress('enable-realtime', setEnablingRealtime, setEnablingRealtimeProgress, "تم تفعيل الوضع الفوري", "فشل تفعيل الوضع الفوري");
+
+  const handleAddUser = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newUser.uid || !newUser.userId || !newUser.name) {
-      toast.error("يرجى ملء جميع الحقول الإلزامية (الرقم التسلسلي، معرف المستخدم، الاسم)");
+      toast.error("يرجى ملء جميع الحقول الإلزامية");
       return;
     }
-    setSubmittingAddUser(true);
-    try {
-      const res = await axios.post(`/api/devices/${id}/set-user`, {
-        uid: parseInt(newUser.uid),
-        userId: newUser.userId,
-        name: newUser.name,
-        password: newUser.password || undefined,
-        role: parseInt(newUser.role),
-        cardno: newUser.cardno || undefined,
-      });
-      if (res.data.success) {
-        toast.success(res.data.message || "تمت إضافة المستخدم بنجاح");
-        setAddUserOpen(false);
-        setNewUser({ uid: "", userId: "", name: "", password: "", role: "0", cardno: "" });
-        fetchDevice();
-      } else {
-        toast.error(res.data.error || "فشل إضافة المستخدم");
-      }
-    } catch (err: unknown) {
-      const error = err as { response?: { data?: { error?: string } } };
-      toast.error(error.response?.data?.error || "فشل في إضافة المستخدم");
-    } finally {
-      setSubmittingAddUser(false);
-    }
+    executeActionWithProgress('set-user', setSubmittingAddUser, setSubmittingAddUserProgress, "تم إضافة المستخدم بنجاح", "فشل إضافة المستخدم", {
+      uid: parseInt(newUser.uid),
+      userId: newUser.userId,
+      name: newUser.name,
+      password: newUser.password || undefined,
+      role: parseInt(newUser.role),
+      cardno: newUser.cardno ? parseInt(newUser.cardno) : undefined
+    }, () => {
+      setAddUserOpen(false);
+      setNewUser({ uid: "", userId: "", name: "", password: "", role: "0", cardno: "" });
+    });
   };
 
-  const handleDeleteUser = async (e: React.FormEvent) => {
+  const handleDeleteUser = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!delUserId) {
-      toast.error("يرجى إدخال معرف المستخدم");
-      return;
-    }
-    setSubmittingDelUser(true);
-    try {
-      const res = await axios.post(`/api/devices/${id}/delete-user`, { userId: delUserId });
-      if (res.data.success) {
-        toast.success(res.data.message || "تم حذف المستخدم بنجاح");
-        setDeleteUserOpen(false);
-        setDelUserId("");
-        fetchDevice();
-      } else {
-        toast.error(res.data.error || "فشل حذف المستخدم");
-      }
-    } catch (err: unknown) {
-      const error = err as { response?: { data?: { error?: string } } };
-      toast.error(error.response?.data?.error || "فشل في حذف المستخدم");
-    } finally {
-      setSubmittingDelUser(false);
-    }
+    if (!delUserId) return;
+    executeActionWithProgress('delete-user', setSubmittingDelUser, setSubmittingDelUserProgress, "تم حذف المستخدم بنجاح", "فشل حذف المستخدم", {
+      userId: delUserId
+    }, () => {
+      setDeleteUserOpen(false);
+      setDelUserId("");
+    });
   };
 
-  const handleToggleUser = async (e: React.FormEvent) => {
+  const handleToggleUser = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!toggleUser.userId) {
-      toast.error("يرجى إدخال معرف المستخدم");
-      return;
-    }
-    setSubmittingToggleUser(true);
-    try {
-      const res = await axios.post(`/api/devices/${id}/enable-user`, {
-        userId: toggleUser.userId,
-        enabled: toggleUser.enabled
-      });
-      if (res.data.success) {
-        toast.success(res.data.message || "تم تغيير حالة المستخدم بنجاح");
-        setToggleUserOpen(false);
-        setToggleUser({ userId: "", enabled: true });
-      } else {
-        toast.error(res.data.error || "فشل تغيير صلاحية المستخدم");
-      }
-    } catch (err: unknown) {
-      const error = err as { response?: { data?: { error?: string } } };
-      toast.error(error.response?.data?.error || "فشل في تغيير صلاحية المستخدم");
-    } finally {
-      setSubmittingToggleUser(false);
-    }
+    if (!toggleUser.userId) return;
+    executeActionWithProgress(toggleUser.enabled ? 'enable-user' : 'disable-user', setSubmittingToggleUser, setSubmittingToggleUserProgress, "تم تعديل حالة المستخدم", "فشل تعديل حالة المستخدم", {
+      userId: toggleUser.userId
+    }, () => {
+      setToggleUserOpen(false);
+      setToggleUser({ userId: "", enabled: true });
+    });
   };
 
-  const handleSetUserGroup = async (e: React.FormEvent) => {
+  const handleSetUserGroup = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!userGroup.userSn || !userGroup.groupNumber) {
-      toast.error("يرجى ملء جميع الحقول");
-      return;
-    }
-    setSubmittingUserGroup(true);
-    try {
-      const res = await axios.post(`/api/devices/${id}/user-group`, {
-        userSn: parseInt(userGroup.userSn),
-        groupNumber: parseInt(userGroup.groupNumber)
-      });
-      if (res.data.success) {
-        toast.success(res.data.message || "تم تعيين المجموعة بنجاح");
-        setUserGroupOpen(false);
-        setUserGroup({ userSn: "", groupNumber: "" });
-      } else {
-        toast.error(res.data.error || "فشل تعيين مجموعة المستخدم");
-      }
-    } catch (err: unknown) {
-      const error = err as { response?: { data?: { error?: string } } };
-      toast.error(error.response?.data?.error || "فشل في تعيين مجموعة المستخدم");
-    } finally {
-      setSubmittingUserGroup(false);
-    }
+    if (!userGroup.userSn || !userGroup.groupNumber) return;
+    executeActionWithProgress('user-group', setSubmittingUserGroup, setSubmittingUserGroupProgress, "تم تعيين المجموعة بنجاح", "فشل تعيين المجموعة", {
+      userSn: parseInt(userGroup.userSn),
+      groupNumber: parseInt(userGroup.groupNumber)
+    }, () => {
+      setUserGroupOpen(false);
+      setUserGroup({ userSn: "", groupNumber: "" });
+    });
   };
 
-  const handleSetTimezone = async (e: React.FormEvent) => {
+  const handleSetTimezone = (e: React.FormEvent) => {
     e.preventDefault();
-    setSubmittingTimezone(true);
-    try {
-      const res = await axios.post(`/api/devices/${id}/timezone-info`, {
-        timezoneIndex: parseInt(timezoneForm.timezoneIndex),
-        sunday: timezoneForm.sunday,
-        monday: timezoneForm.monday,
-        tuesday: timezoneForm.tuesday,
-        wednesday: timezoneForm.wednesday,
-        thursday: timezoneForm.thursday,
-        friday: timezoneForm.friday,
-        saturday: timezoneForm.saturday
-      });
-      if (res.data.success) {
-        toast.success(res.data.message || "تم حفظ المنطقة الزمنية بنجاح");
-        setTimezoneOpen(false);
-      } else {
-        toast.error(res.data.error || "فشل تعيين المنطقة الزمنية");
-      }
-    } catch (err: unknown) {
-      const error = err as { response?: { data?: { error?: string } } };
-      toast.error(error.response?.data?.error || "فشل في تعيين المنطقة الزمنية");
-    } finally {
-      setSubmittingTimezone(false);
-    }
+    if (!timezoneForm.timezoneIndex) return;
+    executeActionWithProgress('timezone-info', setSubmittingTimezone, setSubmittingTimezoneProgress, "تم تعيين المنطقة الزمنية", "فشل تعيين المنطقة الزمنية", {
+      timezoneIndex: parseInt(timezoneForm.timezoneIndex),
+      sunday: timezoneForm.sunday,
+      monday: timezoneForm.monday,
+      tuesday: timezoneForm.tuesday,
+      wednesday: timezoneForm.wednesday,
+      thursday: timezoneForm.thursday,
+      friday: timezoneForm.friday,
+      saturday: timezoneForm.saturday
+    }, () => {
+      setTimezoneOpen(false);
+    });
   };
 
-  const handleSetUserTimezones = async (e: React.FormEvent) => {
+  const handleSetUserTimezones = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!userTimezonesForm.userId || !userTimezonesForm.timezones) {
-      toast.error("يرجى إدخال معرف المستخدم والمناطق الزمنية");
-      return;
-    }
-    const tzArray = userTimezonesForm.timezones
-      .split(",")
-      .map(t => parseInt(t.trim()))
-      .filter(t => !isNaN(t));
-      
-    if (tzArray.length === 0) {
-      toast.error("يرجى إدخال مناطق زمنية صالحة مفصولة بفواصل");
-      return;
-    }
-    
-    setSubmittingUserTimezones(true);
-    try {
-      const res = await axios.post(`/api/devices/${id}/user-timezones`, {
-        userId: userTimezonesForm.userId,
-        timezones: tzArray
-      });
-      if (res.data.success) {
-        toast.success(res.data.message || "تم تعيين مناطق المستخدم الزمنية بنجاح");
-        setUserTimezonesOpen(false);
-        setUserTimezonesForm({ userId: "", timezones: "" });
-      } else {
-        toast.error(res.data.error || "فشل تعيين مناطق المستخدم الزمنية");
-      }
-    } catch (err: unknown) {
-      const error = err as { response?: { data?: { error?: string } } };
-      toast.error(error.response?.data?.error || "فشل في تعيين مناطق المستخدم الزمنية");
-    } finally {
-      setSubmittingUserTimezones(false);
-    }
+    if (!userTimezonesForm.userId || !userTimezonesForm.timezones) return;
+    executeActionWithProgress('user-timezones', setSubmittingUserTimezones, setSubmittingUserTimezonesProgress, "تم تعيين مناطق المستخدم الزمنية", "فشل التعيين", {
+      userId: userTimezonesForm.userId,
+      timezones: userTimezonesForm.timezones.split(",").map(s => parseInt(s.trim()))
+    }, () => {
+      setUserTimezonesOpen(false);
+      setUserTimezonesForm({ userId: "", timezones: "" });
+    });
   };
 
-  const handleDeleteEnroll = async (e: React.FormEvent) => {
+  const handleDeleteEnroll = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!deleteEnrollForm.userId) {
-      toast.error("يرجى إدخال معرف المستخدم");
-      return;
-    }
-    setSubmittingDeleteEnroll(true);
-    try {
-      const res = await axios.post(`/api/devices/${id}/delete-enroll-data`, {
-        userId: deleteEnrollForm.userId,
-        fingerIndex: parseInt(deleteEnrollForm.fingerIndex)
-      });
-      if (res.data.success) {
-        toast.success(res.data.message || "تم حذف بيانات التسجيل بنجاح");
-        setDeleteEnrollOpen(false);
-        setDeleteEnrollForm({ userId: "", fingerIndex: "0" });
-      } else {
-        toast.error(res.data.error || "فشل حذف بيانات التسجيل");
-      }
-    } catch (err: unknown) {
-      const error = err as { response?: { data?: { error?: string } } };
-      toast.error(error.response?.data?.error || "فشل في حذف بيانات التسجيل");
-    } finally {
-      setSubmittingDeleteEnroll(false);
-    }
+    if (!deleteEnrollForm.userId || !deleteEnrollForm.fingerIndex) return;
+    executeActionWithProgress('delete-enroll-data', setSubmittingDeleteEnroll, setSubmittingDeleteEnrollProgress, "تم حذف البصمة بنجاح", "فشل حذف البصمة", {
+      userId: deleteEnrollForm.userId,
+      fingerIndex: parseInt(deleteEnrollForm.fingerIndex)
+    }, () => {
+      setDeleteEnrollOpen(false);
+      setDeleteEnrollForm({ userId: "", fingerIndex: "0" });
+    });
   };
 
   if (loading) {
@@ -893,9 +827,12 @@ export default function DeviceSettingsPage({ params }: ParamsProps) {
                   size="sm"
                   onClick={handleSyncUsers}
                   loading={syncingUsers}
-                  className="w-full mt-3 text-xs font-semibold"
+                  className="w-full mt-3 text-xs font-semibold relative overflow-hidden"
                 >
-                  سحب الموظفين الآن
+                  {syncingUsers && syncingUsersProgress > 0 && (
+                    <div className="absolute top-0 right-0 h-full bg-white/20" style={{ width: `${syncingUsersProgress}%`, transition: 'width 0.3s' }} />
+                  )}
+                  <span className="relative z-10">{syncingUsers ? `جاري السحب (${syncingUsersProgress}%)` : "سحب الموظفين الآن"}</span>
                 </Button>
               </div>
 
@@ -933,9 +870,12 @@ export default function DeviceSettingsPage({ params }: ParamsProps) {
                   variant="outline"
                   onClick={handleReboot}
                   loading={rebooting}
-                  className="w-full mt-3 text-xs border-rose-200 text-rose-700 hover:bg-rose-50 font-semibold"
+                  className="w-full mt-3 text-xs border-rose-200 text-rose-700 hover:bg-rose-50 font-semibold relative overflow-hidden"
                 >
-                  إعادة التشغيل الآن
+                  {rebooting && rebootingProgress > 0 && (
+                    <div className="absolute top-0 right-0 h-full bg-rose-100" style={{ width: `${rebootingProgress}%`, transition: 'width 0.3s' }} />
+                  )}
+                  <span className="relative z-10">{rebooting ? `جاري إعادة التشغيل (${rebootingProgress}%)` : "إعادة التشغيل الآن"}</span>
                 </Button>
               </div>
 
@@ -953,9 +893,12 @@ export default function DeviceSettingsPage({ params }: ParamsProps) {
                   variant="outline"
                   onClick={handleClearLogs}
                   loading={clearingLogs}
-                  className="w-full mt-3 text-xs bg-red-50 hover:bg-red-100 border-red-200 text-red-700 font-bold"
+                  className="w-full mt-3 text-xs bg-red-50 hover:bg-red-100 border-red-200 text-red-700 font-bold relative overflow-hidden"
                 >
-                  تفريغ الذاكرة
+                  {clearingLogs && clearingLogsProgress > 0 && (
+                    <div className="absolute top-0 right-0 h-full bg-red-200" style={{ width: `${clearingLogsProgress}%`, transition: 'width 0.3s' }} />
+                  )}
+                  <span className="relative z-10">{clearingLogs ? `جاري التفريغ (${clearingLogsProgress}%)` : "تفريغ الذاكرة"}</span>
                 </Button>
               </div>
 
@@ -981,16 +924,24 @@ export default function DeviceSettingsPage({ params }: ParamsProps) {
                   variant="outline"
                   onClick={handleTestConnection}
                   loading={testingConn}
-                  className="flex-1 sm:flex-none text-xs"
+                  className="flex-1 sm:flex-none text-xs relative overflow-hidden"
                 >
-                  <Wifi className="h-3.5 w-3.5" /> اختبار الاتصال
+                  {testingConn && testingConnProgress > 0 && (
+                    <div className="absolute top-0 right-0 h-full bg-blue-100" style={{ width: `${testingConnProgress}%`, transition: 'width 0.3s' }} />
+                  )}
+                  <Wifi className="h-3.5 w-3.5 relative z-10" /> 
+                  <span className="relative z-10">{testingConn ? `اختبار (${testingConnProgress}%)` : "اختبار الاتصال"}</span>
                 </Button>
                 <Button
                   onClick={handleSyncLogs}
                   loading={syncing}
-                  className="flex-1 sm:flex-none text-xs"
+                  className="flex-1 sm:flex-none text-xs relative overflow-hidden"
                 >
-                  <RefreshCw className="h-3.5 w-3.5" /> مزامنة السجلات الآن
+                  {syncing && syncingProgress > 0 && (
+                    <div className="absolute top-0 right-0 h-full bg-white/20" style={{ width: `${syncingProgress}%`, transition: 'width 0.3s' }} />
+                  )}
+                  <RefreshCw className="h-3.5 w-3.5 relative z-10" /> 
+                  <span className="relative z-10">{syncing ? `مزامنة (${syncingProgress}%)` : "مزامنة السجلات الآن"}</span>
                 </Button>
               </div>
             </div>
@@ -1016,9 +967,12 @@ export default function DeviceSettingsPage({ params }: ParamsProps) {
                     variant="outline"
                     onClick={handleDisableDevice}
                     loading={disabling}
-                    className="w-full mt-3 text-xs"
+                    className="w-full mt-3 text-xs relative overflow-hidden"
                   >
-                    تعطيل
+                    {disabling && disablingProgress > 0 && (
+                      <div className="absolute top-0 right-0 h-full bg-green-100" style={{ width: `${disablingProgress}%`, transition: 'width 0.3s' }} />
+                    )}
+                    <span className="relative z-10">{disabling ? `جاري التعطيل (${disablingProgress}%)` : "تعطيل"}</span>
                   </Button>
                 </div>
 
@@ -1032,9 +986,12 @@ export default function DeviceSettingsPage({ params }: ParamsProps) {
                     size="sm"
                     onClick={handleEnableDevice}
                     loading={enabling}
-                    className="w-full mt-3 text-xs"
+                    className="w-full mt-3 text-xs relative overflow-hidden"
                   >
-                    تفعيل
+                    {enabling && enablingProgress > 0 && (
+                      <div className="absolute top-0 right-0 h-full bg-white/20" style={{ width: `${enablingProgress}%`, transition: 'width 0.3s' }} />
+                    )}
+                    <span className="relative z-10">{enabling ? `جاري التفعيل (${enablingProgress}%)` : "تفعيل"}</span>
                   </Button>
                 </div>
 
@@ -1049,9 +1006,12 @@ export default function DeviceSettingsPage({ params }: ParamsProps) {
                     variant="outline"
                     onClick={handlePowerOff}
                     loading={poweringOff}
-                    className="w-full mt-3 text-xs border-red-200 text-red-700 hover:bg-red-50"
+                    className="w-full mt-3 text-xs border-red-200 text-red-700 hover:bg-red-50 relative overflow-hidden"
                   >
-                    إيقاف
+                    {poweringOff && poweringOffProgress > 0 && (
+                      <div className="absolute top-0 right-0 h-full bg-red-100" style={{ width: `${poweringOffProgress}%`, transition: 'width 0.3s' }} />
+                    )}
+                    <span className="relative z-10">{poweringOff ? `جاري الإيقاف (${poweringOffProgress}%)` : "إيقاف"}</span>
                   </Button>
                 </div>
               </div>
@@ -1088,9 +1048,12 @@ export default function DeviceSettingsPage({ params }: ParamsProps) {
                     variant="outline"
                     onClick={handleRefreshData}
                     loading={refreshingData}
-                    className="w-full mt-3 text-xs"
+                    className="w-full mt-3 text-xs relative overflow-hidden"
                   >
-                    تحديث
+                    {refreshingData && refreshingDataProgress > 0 && (
+                      <div className="absolute top-0 right-0 h-full bg-orange-100" style={{ width: `${refreshingDataProgress}%`, transition: 'width 0.3s' }} />
+                    )}
+                    <span className="relative z-10">{refreshingData ? `جاري التحديث (${refreshingDataProgress}%)` : "تحديث"}</span>
                   </Button>
                 </div>
 
@@ -1105,9 +1068,12 @@ export default function DeviceSettingsPage({ params }: ParamsProps) {
                     variant="outline"
                     onClick={handleClearData}
                     loading={clearingData}
-                    className="w-full mt-3 text-xs bg-red-50 hover:bg-red-100 border-red-200 text-red-700 font-bold"
+                    className="w-full mt-3 text-xs bg-red-50 hover:bg-red-100 border-red-200 text-red-700 font-bold relative overflow-hidden"
                   >
-                    مسح الكل
+                    {clearingData && clearingDataProgress > 0 && (
+                      <div className="absolute top-0 right-0 h-full bg-red-200" style={{ width: `${clearingDataProgress}%`, transition: 'width 0.3s' }} />
+                    )}
+                    <span className="relative z-10">{clearingData ? `جاري مسح الكل (${clearingDataProgress}%)` : "مسح الكل"}</span>
                   </Button>
                 </div>
 
@@ -1122,9 +1088,12 @@ export default function DeviceSettingsPage({ params }: ParamsProps) {
                     variant="outline"
                     onClick={handleClearAdmins}
                     loading={clearingAdmins}
-                    className="w-full mt-3 text-xs"
+                    className="w-full mt-3 text-xs relative overflow-hidden"
                   >
-                    مسح المشرفين
+                    {clearingAdmins && clearingAdminsProgress > 0 && (
+                      <div className="absolute top-0 right-0 h-full bg-purple-100" style={{ width: `${clearingAdminsProgress}%`, transition: 'width 0.3s' }} />
+                    )}
+                    <span className="relative z-10">{clearingAdmins ? `جاري المسح (${clearingAdminsProgress}%)` : "مسح المشرفين"}</span>
                   </Button>
                 </div>
               </div>
@@ -1270,9 +1239,12 @@ export default function DeviceSettingsPage({ params }: ParamsProps) {
                     size="sm"
                     onClick={handleUnlockDoor}
                     loading={unlockingDoor}
-                    className="w-full mt-3 text-xs"
+                    className="w-full mt-3 text-xs relative overflow-hidden"
                   >
-                    فتح الآن
+                    {unlockingDoor && unlockingDoorProgress > 0 && (
+                      <div className="absolute top-0 right-0 h-full bg-white/20" style={{ width: `${unlockingDoorProgress}%`, transition: 'width 0.3s' }} />
+                    )}
+                    <span className="relative z-10">{unlockingDoor ? `جاري الفتح (${unlockingDoorProgress}%)` : "فتح الآن"}</span>
                   </Button>
                 </div>
 
@@ -1305,9 +1277,12 @@ export default function DeviceSettingsPage({ params }: ParamsProps) {
                     variant="outline"
                     onClick={handleEnableClock}
                     loading={enablingClock}
-                    className="w-full mt-3 text-xs"
+                    className="w-full mt-3 text-xs relative overflow-hidden"
                   >
-                    تفعيل
+                    {enablingClock && enablingClockProgress > 0 && (
+                      <div className="absolute top-0 right-0 h-full bg-orange-100" style={{ width: `${enablingClockProgress}%`, transition: 'width 0.3s' }} />
+                    )}
+                    <span className="relative z-10">{enablingClock ? `جاري التفعيل (${enablingClockProgress}%)` : "تفعيل"}</span>
                   </Button>
                 </div>
 
@@ -1322,9 +1297,12 @@ export default function DeviceSettingsPage({ params }: ParamsProps) {
                     variant="outline"
                     onClick={handleClearSuperLog}
                     loading={clearingSuperLog}
-                    className="w-full mt-3 text-xs"
+                    className="w-full mt-3 text-xs relative overflow-hidden"
                   >
-                    مسح
+                    {clearingSuperLog && clearingSuperLogProgress > 0 && (
+                      <div className="absolute top-0 right-0 h-full bg-orange-100" style={{ width: `${clearingSuperLogProgress}%`, transition: 'width 0.3s' }} />
+                    )}
+                    <span className="relative z-10">{clearingSuperLog ? `جاري المسح (${clearingSuperLogProgress}%)` : "مسح"}</span>
                   </Button>
                 </div>
               </div>
@@ -1351,9 +1329,12 @@ export default function DeviceSettingsPage({ params }: ParamsProps) {
                     variant="outline"
                     onClick={handleEnableRealtime}
                     loading={enablingRealtime}
-                    className="w-full mt-3 text-xs"
+                    className="w-full mt-3 text-xs relative overflow-hidden"
                   >
-                    تفعيل
+                    {enablingRealtime && enablingRealtimeProgress > 0 && (
+                      <div className="absolute top-0 right-0 h-full bg-yellow-100" style={{ width: `${enablingRealtimeProgress}%`, transition: 'width 0.3s' }} />
+                    )}
+                    <span className="relative z-10">{enablingRealtime ? `جاري التفعيل (${enablingRealtimeProgress}%)` : "تفعيل"}</span>
                   </Button>
                 </div>
 
@@ -1585,8 +1566,11 @@ export default function DeviceSettingsPage({ params }: ParamsProps) {
                 </div>
               </div>
               <div className="flex gap-2.5 pt-2">
-                <Button type="submit" size="sm" loading={submittingAddUser} className="flex-1">
-                  إضافة
+                <Button type="submit" size="sm" loading={submittingAddUser} className="flex-1 relative overflow-hidden">
+                  {submittingAddUser && submittingAddUserProgress > 0 && (
+                    <div className="absolute top-0 right-0 h-full bg-white/20" style={{ width: `${submittingAddUserProgress}%`, transition: 'width 0.3s' }} />
+                  )}
+                  <span className="relative z-10">{submittingAddUser ? `جاري الإضافة (${submittingAddUserProgress}%)` : "إضافة"}</span>
                 </Button>
                 <Button type="button" variant="outline" size="sm" onClick={() => setAddUserOpen(false)} className="flex-1">
                   إلغاء
@@ -1621,8 +1605,11 @@ export default function DeviceSettingsPage({ params }: ParamsProps) {
                 ⚠️ تنبيه: سيتم حذف هذا المستخدم وكل سجلاته المرتبطة بجهاز البصمة بشكل نهائي.
               </p>
               <div className="flex gap-2.5">
-                <Button type="submit" size="sm" loading={submittingDelUser} className="flex-1 text-white bg-rose-600 hover:bg-rose-700 border-none">
-                  حذف المستخدم
+                <Button type="submit" size="sm" loading={submittingDelUser} className="flex-1 text-white bg-rose-600 hover:bg-rose-700 border-none relative overflow-hidden">
+                  {submittingDelUser && submittingDelUserProgress > 0 && (
+                    <div className="absolute top-0 right-0 h-full bg-white/20" style={{ width: `${submittingDelUserProgress}%`, transition: 'width 0.3s' }} />
+                  )}
+                  <span className="relative z-10">{submittingDelUser ? `جاري الحذف (${submittingDelUserProgress}%)` : "حذف المستخدم"}</span>
                 </Button>
                 <Button type="button" variant="outline" size="sm" onClick={() => setDeleteUserOpen(false)} className="flex-1">
                   إلغاء
@@ -1665,8 +1652,11 @@ export default function DeviceSettingsPage({ params }: ParamsProps) {
                 </select>
               </div>
               <div className="flex gap-2.5">
-                <Button type="submit" size="sm" loading={submittingToggleUser} className="flex-1">
-                  تعديل الحالة
+                <Button type="submit" size="sm" loading={submittingToggleUser} className="flex-1 relative overflow-hidden">
+                  {submittingToggleUser && submittingToggleUserProgress > 0 && (
+                    <div className="absolute top-0 right-0 h-full bg-white/20" style={{ width: `${submittingToggleUserProgress}%`, transition: 'width 0.3s' }} />
+                  )}
+                  <span className="relative z-10">{submittingToggleUser ? `جاري التعديل (${submittingToggleUserProgress}%)` : "تعديل الحالة"}</span>
                 </Button>
                 <Button type="button" variant="outline" size="sm" onClick={() => setToggleUserOpen(false)} className="flex-1">
                   إلغاء
@@ -1709,8 +1699,11 @@ export default function DeviceSettingsPage({ params }: ParamsProps) {
                 />
               </div>
               <div className="flex gap-2.5">
-                <Button type="submit" size="sm" loading={submittingUserGroup} className="flex-1">
-                  تعيين المجموعة
+                <Button type="submit" size="sm" loading={submittingUserGroup} className="flex-1 relative overflow-hidden">
+                  {submittingUserGroup && submittingUserGroupProgress > 0 && (
+                    <div className="absolute top-0 right-0 h-full bg-white/20" style={{ width: `${submittingUserGroupProgress}%`, transition: 'width 0.3s' }} />
+                  )}
+                  <span className="relative z-10">{submittingUserGroup ? `جاري التعيين (${submittingUserGroupProgress}%)` : "تعيين المجموعة"}</span>
                 </Button>
                 <Button type="button" variant="outline" size="sm" onClick={() => setUserGroupOpen(false)} className="flex-1">
                   إلغاء
@@ -1816,8 +1809,11 @@ export default function DeviceSettingsPage({ params }: ParamsProps) {
                 </div>
               </div>
               <div className="flex gap-2.5 pt-2.5">
-                <Button type="submit" size="sm" loading={submittingTimezone} className="flex-1">
-                  حفظ المنطقة الزمنية
+                <Button type="submit" size="sm" loading={submittingTimezone} className="flex-1 relative overflow-hidden">
+                  {submittingTimezone && submittingTimezoneProgress > 0 && (
+                    <div className="absolute top-0 right-0 h-full bg-white/20" style={{ width: `${submittingTimezoneProgress}%`, transition: 'width 0.3s' }} />
+                  )}
+                  <span className="relative z-10">{submittingTimezone ? `جاري الحفظ (${submittingTimezoneProgress}%)` : "حفظ المنطقة الزمنية"}</span>
                 </Button>
                 <Button type="button" variant="outline" size="sm" onClick={() => setTimezoneOpen(false)} className="flex-1">
                   إلغاء
@@ -1860,8 +1856,11 @@ export default function DeviceSettingsPage({ params }: ParamsProps) {
                 />
               </div>
               <div className="flex gap-2.5">
-                <Button type="submit" size="sm" loading={submittingUserTimezones} className="flex-1">
-                  تعيين المناطق الزمنية
+                <Button type="submit" size="sm" loading={submittingUserTimezones} className="flex-1 relative overflow-hidden">
+                  {submittingUserTimezones && submittingUserTimezonesProgress > 0 && (
+                    <div className="absolute top-0 right-0 h-full bg-white/20" style={{ width: `${submittingUserTimezonesProgress}%`, transition: 'width 0.3s' }} />
+                  )}
+                  <span className="relative z-10">{submittingUserTimezones ? `جاري التعيين (${submittingUserTimezonesProgress}%)` : "تعيين المناطق الزمنية"}</span>
                 </Button>
                 <Button type="button" variant="outline" size="sm" onClick={() => setUserTimezonesOpen(false)} className="flex-1">
                   إلغاء
@@ -1905,8 +1904,11 @@ export default function DeviceSettingsPage({ params }: ParamsProps) {
                 />
               </div>
               <div className="flex gap-2.5">
-                <Button type="submit" size="sm" loading={submittingDeleteEnroll} className="flex-1 text-white bg-rose-600 hover:bg-rose-700 border-none">
-                  حذف البصمة
+                <Button type="submit" size="sm" loading={submittingDeleteEnroll} className="flex-1 text-white bg-rose-600 hover:bg-rose-700 border-none relative overflow-hidden">
+                  {submittingDeleteEnroll && submittingDeleteEnrollProgress > 0 && (
+                    <div className="absolute top-0 right-0 h-full bg-white/20" style={{ width: `${submittingDeleteEnrollProgress}%`, transition: 'width 0.3s' }} />
+                  )}
+                  <span className="relative z-10">{submittingDeleteEnroll ? `جاري الحذف (${submittingDeleteEnrollProgress}%)` : "حذف البصمة"}</span>
                 </Button>
                 <Button type="button" variant="outline" size="sm" onClick={() => setDeleteEnrollOpen(false)} className="flex-1">
                   إلغاء

@@ -57,7 +57,7 @@ export interface ZKDeviceState {
 }
 
 class ZKService {
-  private createInstance(ip: string, port: number, timeout = 10000, inport = 4000) {
+  private createInstance(ip: string, port: number, timeout = 3000, inport = 4000) {
     return new ZKLib(ip, port, timeout, inport);
   }
 
@@ -114,11 +114,7 @@ class ZKService {
       },
       () => ({
         success: true,
-        data: [
-          { deviceUserId: "1", recordTime: new Date(), type: 0 },
-          { deviceUserId: "2", recordTime: new Date(Date.now() - 3600000), type: 1 },
-          { deviceUserId: "3", recordTime: new Date(Date.now() - 7200000), type: 0 }
-        ]
+        data: [] // Empty to prevent duplicating fake records
       })
     );
   }
@@ -178,16 +174,8 @@ class ZKService {
       },
       () => ({
         success: true,
-        attendance: [
-          { deviceUserId: "1", recordTime: new Date(), type: 0 },
-          { deviceUserId: "2", recordTime: new Date(Date.now() - 3600000), type: 1 },
-          { deviceUserId: "3", recordTime: new Date(Date.now() - 7200000), type: 0 }
-        ],
-        users: [
-          { uid: 1, userId: "1", name: "أحمد محمد", role: 0 },
-          { uid: 2, userId: "2", name: "سارة أحمد", role: 0 },
-          { uid: 3, userId: "3", name: "محمد علي", role: 1 }
-        ],
+        attendance: [], // Empty to prevent fake records
+        users: [], // Empty to prevent fake users
         info: {
           userCounts: 16,
           logCounts: 3,
@@ -207,11 +195,7 @@ class ZKService {
       },
       () => ({
         success: true,
-        data: [
-          { uid: 1, userId: "1", name: "أحمد محمد", role: 0 },
-          { uid: 2, userId: "2", name: "سارة أحمد", role: 0 },
-          { uid: 3, userId: "3", name: "محمد علي", role: 1 }
-        ]
+        data: [] // Empty
       })
     );
   }
