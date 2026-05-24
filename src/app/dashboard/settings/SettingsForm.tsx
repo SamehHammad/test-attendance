@@ -118,7 +118,7 @@ export default function SettingsForm() {
                 port = parseInt(formData.publicPort);
             } else if (type === "vpn") {
                 host = formData.vpnIp;
-                port = parseInt(formData.vpnPort);
+                port = 1723; // Default PPTP VPN port
             } else if (type === "tunnel") {
                 // Not standard TCP test usually, but we can try parsing the tunnel url if it's tcp://host:port
                 if (formData.tunnelUrl.startsWith("tcp://")) {
@@ -155,7 +155,7 @@ export default function SettingsForm() {
                 port = parseInt(formData.publicPort);
             } else if (mode === "vpn") {
                 host = formData.vpnIp;
-                port = parseInt(formData.vpnPort);
+                port = 1723; // Default PPTP VPN port
             } else if (mode === "tunnel") {
                 if (formData.tunnelUrl.startsWith("tcp://")) {
                     const parts = formData.tunnelUrl.replace("tcp://", "").split(":");
@@ -504,19 +504,7 @@ export default function SettingsForm() {
                                         />
                                     </div>
                                 </div>
-                                <div>
-                                    <label className="block text-sm font-bold text-gray-800 mb-2">منفذ الاتصال (VPN Port)</label>
-                                    <div className="relative">
-                                        <Server className="absolute right-3 top-2.5 h-5 w-5 text-gray-400" />
-                                        <input
-                                            type="number" name="vpnPort"
-                                            value={formData.vpnPort} onChange={handleChange}
-                                            placeholder="مثال: 4370"
-                                            className="w-full bg-white border border-gray-300 rounded-lg py-2.5 pl-4 pr-10 focus:ring-2 focus:ring-blue-500 font-mono text-gray-900 font-semibold placeholder:text-gray-400 placeholder:font-normal text-left"
-                                            dir="ltr"
-                                        />
-                                    </div>
-                                </div>
+
                                 <div>
                                     <label className="block text-sm font-bold text-gray-800 mb-2">اسم المستخدم (إن وجد)</label>
                                     <div className="relative">

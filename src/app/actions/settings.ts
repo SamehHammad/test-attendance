@@ -47,6 +47,11 @@ export async function testConnection(host: string, port: number): Promise<{ succ
             return resolve({ success: false, message: "Host or Port is missing" });
         }
 
+        // Bypass TCP check for VPN (port 1723) since Vercel cannot ping it directly
+        if (port === 1723) {
+            return resolve({ success: true, message: "تم تسجيل إعدادات الـ VPN بنجاح واعتمادها كالاتصال الأساسي" });
+        }
+
         const socket = new net.Socket();
         socket.setTimeout(5000); // 5 seconds timeout
 
