@@ -32,8 +32,11 @@ export default function SettingsForm() {
         publicIp: "",
         publicPort: "",
         tunnelUrl: "",
+        vpnName: "",
         vpnIp: "",
         vpnPort: "",
+        vpnType: "pptp",
+        vpnSignInType: "password",
         vpnUsername: "",
         vpnPassword: ""
     });
@@ -41,14 +44,17 @@ export default function SettingsForm() {
     useEffect(() => {
         async function load() {
             try {
-                const data = await getSystemSettings();
+                const data = (await getSystemSettings()) as any;
                 setFormData({
                     networkMode: data.networkMode || "local",
                     publicIp: data.publicIp || "",
                     publicPort: data.publicPort?.toString() || "",
                     tunnelUrl: data.tunnelUrl || "",
+                    vpnName: data.vpnName || "",
                     vpnIp: data.vpnIp || "",
                     vpnPort: data.vpnPort?.toString() || "",
+                    vpnType: data.vpnType || "pptp",
+                    vpnSignInType: data.vpnSignInType || "password",
                     vpnUsername: data.vpnUsername || "",
                     vpnPassword: data.vpnPassword || ""
                 });
@@ -491,18 +497,58 @@ export default function SettingsForm() {
                             </div>
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div className="md:col-span-2">
+                                    <label className="block text-sm font-bold text-gray-800 mb-2">اسم الاتصال (Connection name)</label>
+                                    <div className="relative">
+                                        <Shield className="absolute right-3 top-2.5 h-5 w-5 text-gray-400" />
+                                        <input
+                                            type="text" name="vpnName"
+                                            value={formData.vpnName} onChange={handleChange}
+                                            placeholder="مثال: Hesabate"
+                                            className="w-full bg-white border border-gray-300 rounded-lg py-2.5 pl-4 pr-10 focus:ring-2 focus:ring-blue-500 text-gray-900 font-semibold placeholder:text-gray-400 placeholder:font-normal text-left"
+                                            dir="ltr"
+                                        />
+                                    </div>
+                                </div>
                                 <div>
-                                    <label className="block text-sm font-bold text-gray-800 mb-2">عنوان IP الشبكة (VPN IP)</label>
+                                    <label className="block text-sm font-bold text-gray-800 mb-2">عنوان الخادم (Server name or address)</label>
                                     <div className="relative">
                                         <Globe className="absolute right-3 top-2.5 h-5 w-5 text-gray-400" />
                                         <input
                                             type="text" name="vpnIp"
                                             value={formData.vpnIp} onChange={handleChange}
-                                            placeholder="مثال: 10.8.0.x"
+                                            placeholder="مثال: 213.6.64.54"
                                             className="w-full bg-white border border-gray-300 rounded-lg py-2.5 pl-4 pr-10 focus:ring-2 focus:ring-blue-500 font-mono text-gray-900 font-semibold placeholder:text-gray-400 placeholder:font-normal text-left"
                                             dir="ltr"
                                         />
                                     </div>
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-bold text-gray-800 mb-2">نوع الـ VPN (VPN type)</label>
+                                    <select
+                                        name="vpnType" value={formData.vpnType} onChange={handleChange as any}
+                                        className="w-full bg-white border border-gray-300 rounded-lg py-2.5 px-4 focus:ring-2 focus:ring-blue-500 text-gray-900 font-semibold"
+                                        dir="ltr"
+                                    >
+                                        <option value="pptp">Point to Point Tunneling Protocol (PPTP)</option>
+                                        <option value="l2tp">L2TP/IPsec</option>
+                                        <option value="ikev2">IKEv2</option>
+                                        <option value="sstp">Secure Socket Tunneling Protocol (SSTP)</option>
+                                        <option value="openvpn">OpenVPN</option>
+                                    </select>
+                                </div>
+                                <div className="md:col-span-2">
+                                    <label className="block text-sm font-bold text-gray-800 mb-2">نوع معلومات تسجيل الدخول (Type of sign-in info)</label>
+                                    <select
+                                        name="vpnSignInType" value={formData.vpnSignInType} onChange={handleChange as any}
+                                        className="w-full bg-white border border-gray-300 rounded-lg py-2.5 px-4 focus:ring-2 focus:ring-blue-500 text-gray-900 font-semibold"
+                                        dir="ltr"
+                                    >
+                                        <option value="password">Username and password</option>
+                                        <option value="certificate">Certificate</option>
+                                        <option value="smartcard">Smart card</option>
+                                        <option value="otp">One-time password</option>
+                                    </select>
                                 </div>
 
                                 <div>

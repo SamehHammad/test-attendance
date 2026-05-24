@@ -56,8 +56,8 @@ class ZKServiceFacade {
         return { success: true, info };
       },
       () => ({
-        success: true,
-        info: { userCounts: 16, logCounts: 3, logCapacity: 50000 }
+        success: false,
+        error: "فشل الاتصال بالجهاز"
       })
     );
   }
@@ -69,7 +69,7 @@ class ZKServiceFacade {
         const data = await this.parseAndNormalizeAttendances(zk);
         return { success: true, data };
       },
-      () => ({ success: true, data: [] })
+      () => ({ success: false, error: "فشل الاتصال بالجهاز", data: [] })
     );
   }
 
@@ -127,10 +127,10 @@ class ZKServiceFacade {
         };
       },
       () => ({
-        success: true,
+        success: false,
+        error: "فشل الاتصال بالجهاز",
         attendance: [],
-        users: [],
-        info: { userCounts: 16, logCounts: 3, logCapacity: 50000 }
+        users: []
       })
     );
   }
@@ -142,7 +142,7 @@ class ZKServiceFacade {
         const rawUsers = await zk.getUsers();
         return { success: true, data: rawUsers?.data || [] };
       },
-      () => ({ success: true, data: [] })
+      () => ({ success: false, error: "فشل الاتصال بالجهاز", data: [] })
     );
   }
 
@@ -153,7 +153,7 @@ class ZKServiceFacade {
         await zk.clearAttendanceLog();
         return { success: true };
       },
-      () => ({ success: true })
+      () => ({ success: false, error: "فشل الاتصال بالجهاز" })
     );
   }
 
@@ -177,7 +177,7 @@ class ZKServiceFacade {
         await zk.executeCmd(202, buf);
         return { success: true };
       },
-      () => ({ success: true })
+      () => ({ success: false, error: "فشل الاتصال بالجهاز" })
     );
   }
 
@@ -188,7 +188,7 @@ class ZKServiceFacade {
         await zk.executeCmd(1004, "");
         return { success: true };
       },
-      () => ({ success: true })
+      () => ({ success: false, error: "فشل الاتصال بالجهاز" })
     );
   }
 
@@ -227,17 +227,8 @@ class ZKServiceFacade {
         };
       },
       () => ({
-        success: true,
-        data: {
-          serialNumber: "ZK40-MOCK-987654",
-          mac: "00:17:0F:11:C3:A2",
-          vendor: "ZKTeco",
-          firmware: "Ver 8.0.4 Build 120",
-          productCode: "K40",
-          platform: "ZEM500",
-          cardFun: "Enabled",
-          sdkVersion: "SDK 9.0"
-        }
+        success: false,
+        error: "فشل الاتصال بالجهاز"
       })
     );
   }
@@ -249,7 +240,7 @@ class ZKServiceFacade {
         const time = await zk.getTime();
         return { success: true, time };
       },
-      () => ({ success: true, time: new Date() })
+      () => ({ success: false, error: "فشل الاتصال بالجهاز" })
     );
   }
 
@@ -266,7 +257,7 @@ class ZKServiceFacade {
         }
         return { success: true };
       },
-      () => ({ success: true })
+      () => ({ success: false, error: "فشل الاتصال بالجهاز" })
     );
   }
 
@@ -277,7 +268,7 @@ class ZKServiceFacade {
         await zk.enableDevice();
         return { success: true };
       },
-      () => ({ success: true })
+      () => ({ success: false, error: "فشل الاتصال بالجهاز" })
     );
   }
 
@@ -288,7 +279,7 @@ class ZKServiceFacade {
         await zk.freeData();
         return { success: true };
       },
-      () => ({ success: true })
+      () => ({ success: false, error: "فشل الاتصال بالجهاز" })
     );
   }
 
@@ -299,7 +290,7 @@ class ZKServiceFacade {
         await zk.executeCmd(3, "");
         return { success: true };
       },
-      () => ({ success: true })
+      () => ({ success: false, error: "فشل الاتصال بالجهاز" })
     );
   }
 
@@ -310,7 +301,7 @@ class ZKServiceFacade {
         await zk.executeCmd(1013, "");
         return { success: true };
       },
-      () => ({ success: true })
+      () => ({ success: false, error: "فشل الاتصال بالجهاز" })
     );
   }
 
@@ -321,7 +312,7 @@ class ZKServiceFacade {
         await zk.executeCmd(20, "");
         return { success: true };
       },
-      () => ({ success: true })
+      () => ({ success: false, error: "فشل الاتصال بالجهاز" })
     );
   }
 
@@ -332,7 +323,7 @@ class ZKServiceFacade {
         await zk.executeCmd(57, "");
         return { success: true };
       },
-      () => ({ success: true })
+      () => ({ success: false, error: "فشل الاتصال بالجهاز" })
     );
   }
 
@@ -344,7 +335,7 @@ class ZKServiceFacade {
         await zk.executeCmd(1000, "");
         return { success: true };
       },
-      () => ({ success: true })
+      () => ({ success: false, error: "فشل الاتصال بالجهاز" })
     );
   }
 
@@ -371,8 +362,8 @@ class ZKServiceFacade {
         };
       },
       () => ({
-        success: true,
-        state: { state: 0, description: "في انتظار" }
+        success: false,
+        error: "فشل الاتصال بالجهاز"
       })
     );
   }
@@ -389,8 +380,8 @@ class ZKServiceFacade {
         return { success: false, error: "المستخدم غير موجود" };
       },
       () => ({
-        success: true,
-        user: { uid: 1, userId: userId, name: "مستخدم تجريبي " + userId, role: 0, enabled: true }
+        success: false,
+        error: "فشل الاتصال بالجهاز"
       })
     );
   }
@@ -409,7 +400,7 @@ class ZKServiceFacade {
         await zk.executeCmd(5, buf);
         return { success: true };
       },
-      () => ({ success: true })
+      () => ({ success: false, error: "فشل الاتصال بالجهاز" })
     );
   }
 
@@ -422,7 +413,7 @@ class ZKServiceFacade {
         await zk.executeCmd(14, buf);
         return { success: true };
       },
-      () => ({ success: true })
+      () => ({ success: false, error: "فشل الاتصال بالجهاز" })
     );
   }
 
@@ -436,7 +427,7 @@ class ZKServiceFacade {
         await zk.executeCmd(8, buf);
         return { success: true };
       },
-      () => ({ success: true })
+      () => ({ success: false, error: "فشل الاتصال بالجهاز" })
     );
   }
 
@@ -450,7 +441,7 @@ class ZKServiceFacade {
         const group = (res && res.length >= 17) ? res.readUInt8(16) : 1;
         return { success: true, group };
       },
-      () => ({ success: true, group: 1 })
+      () => ({ success: false, error: "فشل الاتصال بالجهاز" })
     );
   }
 
@@ -467,7 +458,7 @@ class ZKServiceFacade {
         await zk.executeCmd(28, buf);
         return { success: true };
       },
-      () => ({ success: true })
+      () => ({ success: false, error: "فشل الاتصال بالجهاز" })
     );
   }
 
@@ -501,12 +492,8 @@ class ZKServiceFacade {
         return { success: true, timezone };
       },
       () => ({
-        success: true,
-        timezone: {
-          timezoneIndex,
-          sunday: "08:00 TO 17:00", monday: "08:00 TO 17:00", tuesday: "08:00 TO 17:00",
-          wednesday: "08:00 TO 17:00", thursday: "08:00 TO 17:00", friday: "08:00 TO 17:00", saturday: "08:00 TO 17:00"
-        }
+        success: false,
+        error: "فشل الاتصال بالجهاز"
       })
     );
   }
@@ -537,7 +524,7 @@ class ZKServiceFacade {
         await zk.executeCmd(37, buf);
         return { success: true };
       },
-      () => ({ success: true })
+      () => ({ success: false, error: "فشل الاتصال بالجهاز" })
     );
   }
 
@@ -556,7 +543,7 @@ class ZKServiceFacade {
         }
         return { success: true, timezones };
       },
-      () => ({ success: true, timezones: [1, 2] })
+      () => ({ success: false, error: "فشل الاتصال بالجهاز" })
     );
   }
 
@@ -572,7 +559,7 @@ class ZKServiceFacade {
         await zk.executeCmd(53, buf);
         return { success: true };
       },
-      () => ({ success: true })
+      () => ({ success: false, error: "فشل الاتصال بالجهاز" })
     );
   }
 
@@ -586,7 +573,7 @@ class ZKServiceFacade {
         await zk.executeCmd(13, buf);
         return { success: true };
       },
-      () => ({ success: true })
+      () => ({ success: false, error: "فشل الاتصال بالجهاز" })
     );
   }
 
@@ -597,7 +584,7 @@ class ZKServiceFacade {
         await zk.executeCmd(12, "");
         return { success: true };
       },
-      () => ({ success: true })
+      () => ({ success: false, error: "فشل الاتصال بالجهاز" })
     );
   }
 
@@ -608,7 +595,7 @@ class ZKServiceFacade {
         await zk.executeCmd(80, "");
         return { success: true };
       },
-      () => ({ success: true })
+      () => ({ success: false, error: "فشل الاتصال بالجهاز" })
     );
   }
 
@@ -620,7 +607,7 @@ class ZKServiceFacade {
         const state = (res && res.length > 16 && res.readUInt8(16) === 1) ? "مفتوح" : "مغلق";
         return { success: true, state };
       },
-      () => ({ success: true, state: "مغلق" })
+      () => ({ success: false, error: "فشل الاتصال بالجهاز" })
     );
   }
 
@@ -631,7 +618,7 @@ class ZKServiceFacade {
         await zk.executeCmd(500, Buffer.from([0xff, 0xff, 0x00, 0x00]));
         return { success: true };
       },
-      () => ({ success: true })
+      () => ({ success: false, error: "فشل الاتصال بالجهاز" })
     );
   }
 }

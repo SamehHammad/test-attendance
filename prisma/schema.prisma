@@ -69,8 +69,11 @@ model SystemSetting {
   tunnelUrl      String?
   
   // Mode: vpn / ssh / proxy
+  vpnName        String?
   vpnIp          String?
   vpnPort        Int?
+  vpnType        String?
+  vpnSignInType  String?
   vpnUsername    String?
   vpnPassword    String?
 
