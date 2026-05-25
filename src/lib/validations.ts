@@ -5,8 +5,8 @@ export const deviceSchema = z.object({
   ip: z
     .string()
     .regex(
-      /^(\d{1,3}\.){3}\d{1,3}$/,
-      "عنوان IP غير صحيح"
+      /^[a-zA-Z0-9.-]+$/,
+      "عنوان IP أو الرابط غير صحيح"
     ),
   port: z
     .number()

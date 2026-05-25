@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import axios from "axios";
+import { api } from "@/lib/api";
 import { formatDateTime, getAttendanceTypeLabel, getAttendanceTypeBadgeColor } from "@/lib/utils";
 
 export default function AttendancePage() {
@@ -9,10 +9,17 @@ export default function AttendancePage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    axios.get("/api/attendance").then((res) => {
-      setRecords(res.data.data);
-      setLoading(false);
-    });
+    api
+      .get("/api/attendance")
+      .then((res) => {
+        setRecords(res.data.data ?? []);
+      })
+      .catch(() => {
+        setRecords([]);
+      })
+      .finally(() => {
+        setLoading(false);
+      });
   }, []);
 
   return (

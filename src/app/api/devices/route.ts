@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { apiFail } from "@/lib/api-response";
 
 export async function GET() {
   try {
@@ -17,10 +18,7 @@ export async function GET() {
     return NextResponse.json({ success: true, data: devices });
   } catch (error) {
     console.error("GET /api/devices error:", error);
-    return NextResponse.json(
-      { success: false, error: "فشل جلب الأجهزة" },
-      { status: 500 }
-    );
+    return apiFail(error, "فشل جلب الأجهزة");
   }
 }
 
@@ -50,9 +48,6 @@ export async function POST(request: Request) {
     return NextResponse.json({ success: true, data: device }, { status: 201 });
   } catch (error) {
     console.error("POST /api/devices error:", error);
-    return NextResponse.json(
-      { success: false, error: "فشل إنشاء الجهاز" },
-      { status: 500 }
-    );
+    return apiFail(error, "فشل إنشاء الجهاز");
   }
 }

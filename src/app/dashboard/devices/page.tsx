@@ -5,7 +5,8 @@ import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { DeviceCard } from "@/components/devices/DeviceCard";
 import { DeviceForm } from "@/components/devices/DeviceForm";
-import axios from "axios";
+import { api } from "@/lib/api";
+import toast from "react-hot-toast";
 import { DeviceFormData } from "@/lib/validations";
 
 export default function DevicesPage() {
@@ -17,10 +18,11 @@ export default function DevicesPage() {
   const fetchDevices = async () => {
     setLoading(true);
     try {
-      const res = await axios.get("/api/devices");
-      setDevices(res.data.data);
+      const res = await api.get("/api/devices");
+      setDevices(res.data.data ?? []);
     } catch (error) {
       console.error(error);
+      toast.error("فشل تحميل الأجهزة. تحقق من الاتصال بقاعدة البيانات.");
     } finally {
       setLoading(false);
     }

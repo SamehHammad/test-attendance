@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { apiFail } from "@/lib/api-response";
 
 export async function GET(request: Request) {
   try {
@@ -18,7 +19,7 @@ export async function GET(request: Request) {
     return NextResponse.json({ success: true, data: employees });
   } catch (error) {
     console.error(error);
-    return NextResponse.json({ success: false, error: "فشل جلب الموظفين" }, { status: 500 });
+    return apiFail(error, "فشل جلب الموظفين");
   }
 }
 
@@ -48,6 +49,6 @@ export async function POST(request: Request) {
     return NextResponse.json({ success: true, data: employee }, { status: 201 });
   } catch (error) {
     console.error(error);
-    return NextResponse.json({ success: false, error: "فشل إنشاء الموظف" }, { status: 500 });
+    return apiFail(error, "فشل إنشاء الموظف");
   }
 }

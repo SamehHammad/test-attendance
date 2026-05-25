@@ -10,7 +10,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
       <Toaster
         position="top-center"
         toastOptions={{
-          duration: 3500,
+          duration: 3000,
           style: {
             borderRadius: "12px",
             fontSize: "14px",

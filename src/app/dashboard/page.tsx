@@ -3,17 +3,24 @@
 import { useEffect, useState } from "react";
 import { StatCard } from "@/components/ui/StatCard";
 import { Monitor, Users, ClipboardList, CheckCircle2 } from "lucide-react";
-import axios from "axios";
+import { api } from "@/lib/api";
 
 export default function DashboardPage() {
   const [stats, setStats] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    axios.get("/api/dashboard").then((res) => {
-      setStats(res.data.data.stats);
-      setLoading(false);
-    });
+    api
+      .get("/api/dashboard")
+      .then((res) => {
+        setStats(res.data.data?.stats ?? null);
+      })
+      .catch(() => {
+        setStats(null);
+      })
+      .finally(() => {
+        setLoading(false);
+      });
   }, []);
 
   if (loading) return <div className="p-8 text-center text-gray-500">جاري التحميل...</div>;

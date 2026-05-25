@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { apiFail } from "@/lib/api-response";
 
 export async function GET() {
   try {
@@ -54,6 +55,6 @@ export async function GET() {
     });
   } catch (error) {
     console.error(error);
-    return NextResponse.json({ success: false, error: "فشل جلب بيانات الداشبورد" }, { status: 500 });
+    return apiFail(error, "فشل جلب بيانات الداشبورد");
   }
 }

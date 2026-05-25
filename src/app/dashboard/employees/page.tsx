@@ -1,17 +1,26 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import axios from "axios";
+import { api } from "@/lib/api";
+import toast from "react-hot-toast";
 
 export default function EmployeesPage() {
   const [employees, setEmployees] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    axios.get("/api/employees").then((res) => {
-      setEmployees(res.data.data);
-      setLoading(false);
-    });
+    api
+      .get("/api/employees")
+      .then((res) => {
+        setEmployees(res.data.data ?? []);
+      })
+      .catch(() => {
+        setEmployees([]);
+        toast.error("فشل تحميل الموظفين. تحقق من الاتصال بقاعدة البيانات.");
+      })
+      .finally(() => {
+        setLoading(false);
+      });
   }, []);
 
   return (

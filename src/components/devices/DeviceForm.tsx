@@ -6,7 +6,7 @@ import { deviceSchema, DeviceFormData } from "@/lib/validations";
 import { Modal } from "@/components/ui/Modal";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
-import axios from "axios";
+import { api, getApiErrorMessage } from "@/lib/api";
 import toast from "react-hot-toast";
 
 interface DeviceFormProps {
@@ -32,18 +32,17 @@ export function DeviceForm({ isOpen, onClose, onSuccess, device }: DeviceFormPro
   const onSubmit = async (data: DeviceFormData) => {
     try {
       if (isEdit) {
-        await axios.put(`/api/devices/${device?.id}`, data);
+        await api.put(`/api/devices/${device?.id}`, data);
         toast.success("تم تحديث الجهاز بنجاح");
       } else {
-        await axios.post("/api/devices", data);
+        await api.post("/api/devices", data);
         toast.success("تم إضافة الجهاز بنجاح");
       }
       reset();
       onClose();
       onSuccess();
     } catch (err: unknown) {
-      const error = err as { response?: { data?: { error?: string } } };
-      toast.error(error.response?.data?.error ?? "حدث خطأ ما");
+      toast.error(getApiErrorMessage(err));
     }
   };
 

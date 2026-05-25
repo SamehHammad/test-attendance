@@ -2,12 +2,17 @@
   "name": "zk-attendance",
   "version": "0.1.0",
   "private": true,
+  "main": "electron/main.js",
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev -p 3000",
     "build": "next build",
-    "start": "next start",
+    "start": "next start -p 3000",
     "lint": "eslint",
-    "postinstall": "prisma generate"
+    "postinstall": "prisma generate",
+    "db:push": "prisma db push",
+    "electron": "electron .",
+    "electron:dev": "concurrently \"next dev -p 3000\" \"wait-on http://localhost:3000 && electron .\"",
+    "electron:build": "next build && electron-builder --win"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
@@ -33,9 +38,73 @@
     "@types/node": "^20.19.41",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "concurrently": "^9.2.1",
+    "electron": "^33.4.11",
+    "electron-builder": "^25.1.8",
     "eslint": "^9",
     "eslint-config-next": "16.2.6",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "wait-on": "^8.0.5"
+  },
+  "build": {
+    "appId": "com.hesabate.attendance",
+    "productName": "نظام الحضور والانصراف",
+    "executableName": "ZKAttendance",
+    "asar": false,
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "electron/**/*",
+      ".next/**/*",
+      "!.next/cache/**/*",
+      "!.next/trace",
+      "node_modules/**/*",
+      "node_modules/.prisma/**/*",
+      "!node_modules/.cache/**/*",
+      "!node_modules/.bin/**/*",
+      "!node_modules/typescript/**/*",
+      "!node_modules/eslint/**/*",
+      "!node_modules/eslint-*/**/*",
+      "!node_modules/@eslint/**/*",
+      "!node_modules/eslint-config-next/**/*",
+      "!node_modules/@tailwindcss/**/*",
+      "!node_modules/tailwindcss/**/*",
+      "!node_modules/postcss/**/*",
+      "!node_modules/electron-builder/**/*",
+      "!node_modules/electron/**/*",
+      "!node_modules/concurrently/**/*",
+      "!node_modules/wait-on/**/*",
+      "!node_modules/@types/**/*",
+      "!node_modules/**/*.{md,markdown,txt,map,ts}",
+      "!node_modules/**/CHANGELOG*",
+      "!node_modules/**/LICENSE*",
+      "!node_modules/**/README*",
+      "!node_modules/**/AUTHORS*",
+      "!node_modules/**/{test,tests,__tests__,spec,specs,__mocks__,__fixtures__}/**/*",
+      "!node_modules/**/examples/**/*",
+      "!node_modules/**/docs/**/*",
+      "!node_modules/**/coverage/**/*",
+      "!node_modules/**/benchmark/**/*",
+      "!node_modules/date-fns/locale/**/*",
+      "!node_modules/caniuse-lite/**/*",
+      "!node_modules/browserslist/**/*",
+      "public/**/*",
+      "prisma/**/*",
+      "package.json",
+      "next.config.*",
+      ".env*"
+    ],
+    "win": {
+      "target": "nsis",
+      "icon": "electron/icon.png"
+    },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false,
+      "language": "1025",
+      "deleteAppDataOnUninstall": false
+    }
   }
 }
