@@ -21,9 +21,12 @@
 /build
 /dist/
 
-# electron-builder output
-*.exe
-*.blockmap
+# Tauri build output
+/src-tauri/target/
+/src-tauri/binaries/
+
+# splash is generated, keeps it clean
+# /splash
 
 # misc
 .DS_Store
