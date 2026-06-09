@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { Shield, Globe, Router, SwitchCamera, AlertTriangle, CheckCircle2, Server, Key, Info, User, Lock, Network, Loader2, XCircle, Power, Wifi, WifiOff, Clock, RefreshCw } from "lucide-react";
 import { getSystemSettings, updateSystemSettings, testConnection, getConnectionStatus } from "@/app/actions/settings";
+import { getBaseUrl } from "@/lib/api";
 
 export default function SettingsForm() {
     const [activeTab, setActiveTab] = useState<"port" | "vpn" | "adms" | "tunnel">("port");
@@ -183,7 +184,7 @@ export default function SettingsForm() {
             const res = await testConnection(host, port);
             if (res.success) {
                 // Update connection status via API
-                await fetch(`${process.env.NEXT_PUBLIC_API_URL || ""}/api/connection`, {
+                await fetch(`${getBaseUrl()}/api/connection`, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ action: "connect", mode })
@@ -207,7 +208,7 @@ export default function SettingsForm() {
         setIsDisconnecting(true);
         setSuccessMsg("");
         try {
-            await fetch(`${process.env.NEXT_PUBLIC_API_URL || ""}/api/connection`, {
+            await fetch(`${getBaseUrl()}/api/connection`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ action: "disconnect" })

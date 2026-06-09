@@ -1,7 +1,18 @@
 import axios, { AxiosError } from "axios";
 
+export function getBaseUrl(): string {
+  let url = process.env.NEXT_PUBLIC_API_URL || "";
+  // Strip starting/ending quotes if user accidentally added them in Vercel
+  if (url.startsWith('"') && url.endsWith('"')) {
+    url = url.slice(1, -1);
+  } else if (url.startsWith("'") && url.endsWith("'")) {
+    url = url.slice(1, -1);
+  }
+  return url;
+}
+
 export const api = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL || "",
+  baseURL: getBaseUrl(),
   timeout: 30000,
 });
 
