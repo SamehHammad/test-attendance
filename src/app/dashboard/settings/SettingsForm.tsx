@@ -183,7 +183,7 @@ export default function SettingsForm() {
             const res = await testConnection(host, port);
             if (res.success) {
                 // Update connection status via API
-                await fetch("/api/connection", {
+                await fetch(`${process.env.NEXT_PUBLIC_API_URL || ""}/api/connection`, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ action: "connect", mode })
@@ -207,7 +207,7 @@ export default function SettingsForm() {
         setIsDisconnecting(true);
         setSuccessMsg("");
         try {
-            await fetch("/api/connection", {
+            await fetch(`${process.env.NEXT_PUBLIC_API_URL || ""}/api/connection`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ action: "disconnect" })

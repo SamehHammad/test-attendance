@@ -11,7 +11,7 @@ import {
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { formatDateTime } from "@/lib/utils";
-import axios from "axios";
+import { api as axios } from "@/lib/api";
 import toast from "react-hot-toast";
 
 interface DeviceCardProps {
