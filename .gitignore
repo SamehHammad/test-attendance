@@ -20,6 +20,7 @@
 # production
 /build
 /dist/
+/dist-electron/
 
 # Tauri build output
 /src-tauri/target/
