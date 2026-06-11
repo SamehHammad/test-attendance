@@ -11,13 +11,19 @@
     },
     "files": [
       "main.js",
-      ".env",
-      ".next/standalone/**/*",
-      "public/**/*",
       "!node_modules"
     ],
-    "asarUnpack": [
-      ".next/standalone/**/*"
+    "extraResources": [
+      {
+        "from": ".next/standalone",
+        "to": "standalone",
+        "filter": ["**/*"]
+      },
+      {
+        "from": "public",
+        "to": "standalone/public",
+        "filter": ["**/*"]
+      }
     ],
     "win": {
       "target": "nsis"
