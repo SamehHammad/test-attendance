@@ -40,7 +40,22 @@ if (process.platform === 'darwin') {
   app.dock.hide();
 }
 
-app.whenReady().then(() => {
+// --- Single Instance Lock ---
+const gotTheLock = app.requestSingleInstanceLock();
+
+if (!gotTheLock) {
+  app.quit();
+} else {
+  app.on('second-instance', (event, commandLine, workingDirectory) => {
+    // Show a message if user tries to open a second instance
+    dialog.showMessageBox({
+      type: 'info',
+      title: 'تنبيه',
+      message: 'السيرفر يعمل بالفعل في الخلفية. يمكنك إغلاقه أو عرض السجل من الأيقونة بجوار الساعة.'
+    });
+  });
+
+  app.whenReady().then(() => {
   // Set the app to run on Windows startup
   app.setLoginItemSettings({
     openAtLogin: true,
@@ -273,3 +288,4 @@ app.on('before-quit', () => {
     }
   }
 });
+} // Close the 'else' block for gotTheLock
