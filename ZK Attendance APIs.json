@@ -1,0 +1,255 @@
+{
+  "info": {
+    "name": "ZK Attendance APIs",
+    "description": "Professional Postman collection for ZKTeco Attendance System APIs",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000",
+      "type": "string"
+    },
+    {
+      "key": "deviceId",
+      "value": "ENTER_DEVICE_ID_HERE",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Get All Devices (جلب جميع الأجهزة)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/devices",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "devices"]
+        }
+      }
+    },
+    {
+      "name": "2. Add New Device (إضافة جهاز جديد)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Main Door Device\",\n  \"ip\": \"192.168.1.201\",\n  \"port\": 4370,\n  \"location\": \"Main Entrance\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/devices",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "devices"]
+        }
+      }
+    },
+    {
+      "name": "3. Test Connection (اختبار الاتصال)",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/devices/{{deviceId}}/test-connection",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "devices", "{{deviceId}}", "test-connection"]
+        }
+      }
+    },
+    {
+      "name": "4. Sync Data (مزامنة البيانات والحضور)",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/devices/{{deviceId}}/sync",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "devices", "{{deviceId}}", "sync"]
+        }
+      }
+    },
+    {
+      "name": "5. Sync Users (مزامنة الموظفين)",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/devices/{{deviceId}}/sync-users",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "devices", "{{deviceId}}", "sync-users"]
+        }
+      }
+    },
+    {
+      "name": "6. Sync Time (مزامنة الوقت)",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/devices/{{deviceId}}/sync-time",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "devices", "{{deviceId}}", "sync-time"]
+        }
+      }
+    },
+    {
+      "name": "7. Get Device Details (تفاصيل الجهاز)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/devices/{{deviceId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "devices", "{{deviceId}}"]
+        }
+      }
+    },
+    {
+      "name": "8. Update Device (تحديث الجهاز)",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Updated Device Name\",\n  \"ip\": \"192.168.1.202\",\n  \"port\": 4370,\n  \"location\": \"Second Floor\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/devices/{{deviceId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "devices", "{{deviceId}}"]
+        }
+      }
+    },
+    {
+      "name": "9. Delete Device (حذف الجهاز)",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/devices/{{deviceId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "devices", "{{deviceId}}"]
+        }
+      }
+    },
+    {
+      "name": "10. Reboot Device (إعادة تشغيل الجهاز)",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/devices/{{deviceId}}/reboot",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "devices", "{{deviceId}}", "reboot"]
+        }
+      }
+    },
+    {
+      "name": "11. Power Off Device (إغلاق الجهاز)",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/devices/{{deviceId}}/power-off",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "devices", "{{deviceId}}", "power-off"]
+        }
+      }
+    },
+    {
+      "name": "12. Unlock Door (فتح الباب)",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/devices/{{deviceId}}/unlock-door",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "devices", "{{deviceId}}", "unlock-door"]
+        }
+      }
+    },
+    {
+      "name": "13. Clear Logs (مسح سجلات الحضور)",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/devices/{{deviceId}}/clear-logs",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "devices", "{{deviceId}}", "clear-logs"]
+        }
+      }
+    },
+    {
+      "name": "14. Get Device Parameters (معلمات الجهاز)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/devices/{{deviceId}}/parameters",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "devices", "{{deviceId}}", "parameters"]
+        }
+      }
+    },
+    {
+      "name": "15. Get Device State (حالة الجهاز)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/devices/{{deviceId}}/device-state",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "devices", "{{deviceId}}", "device-state"]
+        }
+      }
+    },
+    {
+      "name": "16. Disable Device (تعطيل الجهاز)",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/devices/{{deviceId}}/disable-device",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "devices", "{{deviceId}}", "disable-device"]
+        }
+      }
+    },
+    {
+      "name": "17. Enable Device (تفعيل الجهاز)",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/devices/{{deviceId}}/enable-device",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "devices", "{{deviceId}}", "enable-device"]
+        }
+      }
+    }
+  ]
+}
