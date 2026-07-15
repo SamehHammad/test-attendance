@@ -10,7 +10,7 @@ const cairo = Cairo({
 });
 
 export const metadata: Metadata = {
-  title: "ZK Attendance | نظام الحضور والانصراف",
+  title: "Trivvo Hr",
   description: "نظام احترافي لإدارة الحضور والانصراف باستخدام أجهزة ZKTeco",
   keywords: ["ZKTeco", "حضور", "انصراف", "K40", "بصمة"],
 };

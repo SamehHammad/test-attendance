@@ -5,7 +5,7 @@
   "main": "main.js",
   "build": {
     "appId": "com.hesabate.attendance",
-    "productName": "نظام الحضور والانصراف",
+    "productName": "Trivvo Hr",
     "directories": {
       "output": "dist-electron"
     },

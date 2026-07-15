@@ -62,7 +62,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
               </div>
               <div>
                 <p className="text-sm font-bold text-gray-900 leading-tight">ZK Attendance</p>
-                <p className="text-[10px] text-gray-500">نظام الحضور والانصراف</p>
+                <p className="text-[10px] text-gray-500">Trivvo Hr</p>
               </div>
             </Link>
             <button
