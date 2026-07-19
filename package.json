@@ -37,9 +37,6 @@
     "lint": "eslint",
     "postinstall": "prisma generate",
     "db:push": "prisma db push",
-    "tauri": "npx tauri",
-    "tauri:dev": "npx tauri dev",
-    "tauri:build": "npm run build && npm run build:copy-assets && npx tauri build",
     "electron:dev": "npm run build && npm run build:copy-assets && npx electron .",
     "electron:build": "npm run build && npm run build:copy-assets && npx electron-builder build --win"
   },
