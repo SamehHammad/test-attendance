@@ -17,26 +17,35 @@
       {
         "from": ".next/standalone",
         "to": "standalone",
-        "filter": ["**/*"]
+        "filter": [
+          "**/*"
+        ]
       },
       {
         "from": "public",
         "to": "standalone/public",
-        "filter": ["**/*"]
+        "filter": [
+          "**/*"
+        ]
       }
     ],
     "win": {
-      "target": "nsis"
+      "target": "nsis",
+      "icon": "build/icons/icon.ico"
+    },
+    "mac": {
+      "target": "dmg",
+      "icon": "build/icons/icon.icns"
     }
   },
   "scripts": {
     "dev": "next dev --turbopack -p 3000",
     "build": "next build --webpack",
-    "build:copy-assets": "xcopy /E /I /Y .next\\static .next\\standalone\\.next\\static && xcopy /E /I /Y public .next\\standalone\\public && xcopy /E /I /Y node_modules\\.prisma .next\\standalone\\node_modules\\.prisma && xcopy /E /I /Y node_modules\\@prisma\\client .next\\standalone\\node_modules\\@prisma\\client && copy /Y .env .next\\standalone\\.env",
     "start": "next start -p 3000",
     "lint": "eslint",
     "postinstall": "prisma generate",
     "db:push": "prisma db push",
+    "build:copy-assets": "node scripts/copy-assets.mjs",
     "electron:dev": "npm run build && npm run build:copy-assets && npx electron .",
     "electron:build": "npm run build && npm run build:copy-assets && npx electron-builder build --win"
   },
