@@ -63,11 +63,12 @@ if (!gotTheLock) {
   });
 
   // --- Create Tray Icon ---
+  const iconName = process.platform === 'win32' ? 'icon.ico' : 'icon.png';
   let iconPath;
   if (app.isPackaged) {
-    iconPath = path.join(process.resourcesPath, 'standalone', 'public', 'vercel.svg');
+    iconPath = path.join(process.resourcesPath, 'standalone', 'public', iconName);
   } else {
-    iconPath = path.join(__dirname, 'public', 'vercel.svg');
+    iconPath = path.join(__dirname, 'public', iconName);
   }
   const icon = nativeImage.createFromPath(iconPath);
   tray = new Tray(icon.isEmpty() ? nativeImage.createEmpty() : icon);
@@ -81,6 +82,8 @@ if (!gotTheLock) {
   tray.setToolTip('سيرفر الحضور والانصراف (يعمل في الخلفية)');
   tray.setContextMenu(contextMenu);
 
+  Menu.setApplicationMenu(null);
+
   // --- Create a visible log window (black CMD-like window) ---
   logWindow = new BrowserWindow({
     width: 800,
@@ -88,6 +91,7 @@ if (!gotTheLock) {
     title: 'سيرفر الحضور والانصراف - localhost:3000',
     backgroundColor: '#1e1e1e',
     show: false, // Run silently by default
+    autoHideMenuBar: true,
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true
@@ -130,6 +134,8 @@ if (!gotTheLock) {
     </body>
     </html>
   `;
+
+  logWindow.webContents.setMaxListeners(50);
 
   logWindow.loadURL('data:text/html;charset=utf-8,' + encodeURIComponent(logHTML));
 
@@ -174,7 +180,7 @@ if (!gotTheLock) {
   // --- Set environment variables ---
   const serverEnv = Object.assign({}, process.env, {
     PORT: '3000',
-    HOSTNAME: '127.0.0.1',
+    HOSTNAME: '0.0.0.0',
     NODE_ENV: 'production',
     NEXT_PUBLIC_APP_URL: 'http://localhost:3000'
   });
@@ -256,6 +262,12 @@ if (!gotTheLock) {
       sendLog('', '');
       sendLog('✅✅✅ السيرفر يعمل بنجاح على http://localhost:3000', 'info');
       sendLog('🌐 السيرفر يعمل الآن في الخلفية...', 'info');
+      if (tray && process.platform === 'win32') {
+        tray.displayBalloon({
+          title: 'سيرفر الحضور والانصراف',
+          content: 'السيرفر يعمل الآن في الخلفية على http://localhost:3000'
+        });
+      }
     })
     .catch((err) => {
       sendLog('❌ السيرفر لم يبدأ في الوقت المحدد: ' + err.message, 'error');
