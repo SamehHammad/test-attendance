@@ -1,8 +1,6 @@
 // scripts/copy-assets.mjs
 // Cross-platform (Windows + Mac + Linux) replacement for the old xcopy-based
-// build:copy-assets script. Works with npm, yarn, and pnpm (including pnpm's
-// symlinked virtual store), because it resolves real paths via Node's own
-// module resolver instead of assuming a fixed folder layout.
+// build:copy-assets script. Works with npm, yarn, and pnpm.
 
 import fs from "node:fs";
 import path from "node:path";
@@ -17,8 +15,6 @@ function copyDir(src, dest) {
     return;
   }
   fs.mkdirSync(dest, { recursive: true });
-  // dereference: true -> follow symlinks (needed for pnpm) instead of copying
-  // the symlink pointer itself, which would break once moved to another machine.
   fs.cpSync(src, dest, { recursive: true, dereference: true });
   console.log(`[copy-assets] Copied ${src} -> ${dest}`);
 }
@@ -34,19 +30,27 @@ copyDir(
 // 2. Public assets
 copyDir(path.join(root, "public"), path.join(standaloneDir, "public"));
 
-// 3. Resolve Prisma's real location (handles pnpm's virtual store transparently)
-const prismaClientPkgJsonPath = require.resolve("@prisma/client/package.json");
-const prismaClientDir = path.dirname(prismaClientPkgJsonPath); // .../node_modules/@prisma/client
-const nodeModulesDir = path.dirname(path.dirname(prismaClientDir)); // .../node_modules
-const dotPrismaDir = path.join(nodeModulesDir, ".prisma");
+// 3. Build Icons
+copyDir(path.join(root, "build", "icons"), path.join(standaloneDir, "build", "icons"));
+copyDir(path.join(root, "build", "icons"), path.join(root, "dist-electron", "icons"));
 
-copyDir(dotPrismaDir, path.join(standaloneDir, "node_modules", ".prisma"));
-copyDir(
-  prismaClientDir,
-  path.join(standaloneDir, "node_modules", "@prisma", "client"),
-);
+// 4. Resolve Prisma's real location
+try {
+  const prismaClientPkgJsonPath = require.resolve("@prisma/client/package.json");
+  const prismaClientDir = path.dirname(prismaClientPkgJsonPath);
+  const nodeModulesDir = path.dirname(path.dirname(prismaClientDir));
+  const dotPrismaDir = path.join(nodeModulesDir, ".prisma");
 
-// 4. Env file
+  copyDir(dotPrismaDir, path.join(standaloneDir, "node_modules", ".prisma"));
+  copyDir(
+    prismaClientDir,
+    path.join(standaloneDir, "node_modules", "@prisma", "client"),
+  );
+} catch (err) {
+  console.warn(`[copy-assets] Warning copying Prisma modules: ${err.message}`);
+}
+
+// 5. Env file
 const envSrc = path.join(root, ".env");
 const envDest = path.join(standaloneDir, ".env");
 if (fs.existsSync(envSrc)) {

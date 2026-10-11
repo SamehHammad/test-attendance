@@ -25,15 +25,15 @@ model Device {
 }
 
 model Employee {
-  id           String   @id @default(cuid())
+  id           String    @id @default(cuid())
   deviceUserId String
   name         String
-  department   String?
-  position     String?
+  departmentId String?
+  positionId   String?
   deviceId     String
-  device       Device   @relation(fields: [deviceId], references: [id], onDelete: Cascade)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  device       Device    @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
 
   attendance AttendanceRecord[]
 
@@ -46,12 +46,15 @@ model AttendanceRecord {
   deviceUserId String
   recordTime   DateTime
   type         Int       @default(0)
-  deviceId     String
+  deviceId     String?
   employeeId   String?
-  device       Device    @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+  device       Device?   @relation(fields: [deviceId], references: [id], onDelete: Cascade)
   employee     Employee? @relation(fields: [employeeId], references: [id])
   createdAt    DateTime  @default(now())
 
+  @@unique([deviceId, deviceUserId, recordTime])
+  @@index([deviceId, recordTime])
+  @@index([employeeId])
   @@map("attendance_records")
 }
 
@@ -79,7 +82,7 @@ model SystemSetting {
 
   // Connection status
   isConnected    Boolean  @default(false)
-  connectionStatus String? @default("disconnected") // "connected", "disconnected", "connecting", "error"
+  connectionStatus String? @default("disconnected")
   lastConnectionTime DateTime?
   connectionError String?
 

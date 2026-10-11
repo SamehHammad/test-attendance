@@ -7,7 +7,7 @@ export class DeviceConnectionManager {
    * Create a new ZKLib instance.
    */
   static createInstance(device: ZKDevice) {
-    return new ZKLib(device.ip, device.port, device.timeout || 5000, device.inport || 4000);
+    return new ZKLib(device.ip, device.port, device.timeout || 15000, device.inport || 4000);
   }
 
   /**

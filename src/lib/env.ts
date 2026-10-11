@@ -14,6 +14,10 @@ export function normalizeDatabaseUrl(url: string): string {
     normalized += `${normalized.includes("?") ? "&" : "?"}connect_timeout=15`;
   }
 
+  if (!/pool_timeout=/i.test(normalized)) {
+    normalized += `${normalized.includes("?") ? "&" : "?"}pool_timeout=30`;
+  }
+
   if (!/sslmode=/i.test(normalized) && normalized.startsWith("postgresql")) {
     normalized += `${normalized.includes("?") ? "&" : "?"}sslmode=require`;
   }

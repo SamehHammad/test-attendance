@@ -62,7 +62,7 @@ export class AttendanceParser {
       throw new RangeError(`Buffer length ${recordData.length} is less than 40 bytes.`);
     }
 
-    const deviceUserId = recordData.slice(2, 2 + 9).toString('ascii').split('\0').shift() || '';
+    const deviceUserId = recordData.subarray(2, 26).toString('ascii').replace(/\0/g, '').trim() || '';
     const verifyModeCode = recordData.readUInt8(26);
     const recordTime = this.parseTimeToDate(recordData.readUInt32LE(27));
     const attendanceStateCode = recordData.readUInt8(31);

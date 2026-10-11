@@ -14,39 +14,69 @@ export async function POST(_req: Request, { params }: Params) {
 
     const result = await zkService.getUsers(device.ip, device.port);
     if (!result.success || !result.data) {
-      return NextResponse.json({ success: false, error: result.error }, { status: 500 });
+      return NextResponse.json(
+        { success: false, error: result.error || "فشل الاتصال بجهاز البصمة" },
+        { status: 500 }
+      );
+    }
+
+    // 1. Fetch all existing employees for this device in 1 query
+    const existingEmployees = await prisma.employee.findMany({
+      where: { deviceId: id },
+      select: { id: true, deviceUserId: true, name: true },
+    });
+
+    const existingMap = new Map<string, { id: string; name: string }>();
+    for (const emp of existingEmployees) {
+      existingMap.set(emp.deviceUserId, { id: emp.id, name: emp.name });
+    }
+
+    const toInsert: { name: string; deviceUserId: string; deviceId: string }[] = [];
+    const toUpdate: { id: string; name: string }[] = [];
+    const seenUids = new Set<string>();
+
+    for (const u of result.data) {
+      const deviceUserId = String(u.userId).trim();
+      if (!deviceUserId || seenUids.has(deviceUserId)) continue;
+      seenUids.add(deviceUserId);
+
+      const employeeName = u.name?.trim() || `موظف ${deviceUserId}`;
+      const existing = existingMap.get(deviceUserId);
+
+      if (!existing) {
+        toInsert.push({
+          deviceUserId,
+          name: employeeName,
+          deviceId: id,
+        });
+      } else if (existing.name !== employeeName) {
+        toUpdate.push({
+          id: existing.id,
+          name: employeeName,
+        });
+      }
     }
 
     let inserted = 0;
-    let updated = 0;
-    
-    for (const u of result.data) {
-      const deviceUserId = String(u.userId);
-      const existing = await prisma.employee.findUnique({
-        where: {
-          deviceUserId_deviceId: {
-            deviceUserId,
-            deviceId: id,
-          },
-        },
+    if (toInsert.length > 0) {
+      const res = await prisma.employee.createMany({
+        data: toInsert,
+        skipDuplicates: true,
       });
+      inserted = res.count;
+    }
 
-      if (!existing) {
-        await prisma.employee.create({
-          data: {
-            deviceUserId,
-            name: u.name || `موظف ${deviceUserId}`,
-            deviceId: id,
-          },
-        });
-        inserted++;
-      } else if (existing.name !== u.name) {
-        await prisma.employee.update({
-          where: { id: existing.id },
-          data: { name: u.name || existing.name },
-        });
-        updated++;
-      }
+    let updated = 0;
+    if (toUpdate.length > 0) {
+      await Promise.all(
+        toUpdate.map((item) =>
+          prisma.employee.update({
+            where: { id: item.id },
+            data: { name: item.name },
+          })
+        )
+      );
+      updated = toUpdate.length;
     }
 
     // Refresh device state
@@ -62,8 +92,11 @@ export async function POST(_req: Request, { params }: Params) {
       inserted,
       updated,
     });
-  } catch (error) {
-    console.error(error);
-    return NextResponse.json({ success: false, error: "فشل سحب بيانات الموظفين" }, { status: 500 });
+  } catch (error: any) {
+    console.error("[Sync Users Error]", error);
+    return NextResponse.json(
+      { success: false, error: "فشل سحب بيانات الموظفين: " + (error?.message || "خطأ غير معروف") },
+      { status: 500 }
+    );
   }
 }

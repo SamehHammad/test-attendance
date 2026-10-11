@@ -25,21 +25,29 @@ class ZKServiceFacade {
       // This works seamlessly across TCP, UDP, and any legacy SSR or 8-byte/16-byte/40-byte firmwares
       // while eliminating socket timeouts, packet fragmentations, or custom buffer slicing errors.
       const rawData = await zk.getAttendances();
-      const records: ZKAttendanceRecord[] = (rawData?.data || []).map((rec: any) => {
-        const state = rec.type ?? 0;
-        const verifyCode = rec.verifyMode ?? 0;
-        return {
-          employeeId: String(rec.deviceUserId),
-          deviceUserId: String(rec.deviceUserId),
-          timestamp: new Date(rec.recordTime),
-          recordTime: new Date(rec.recordTime),
-          verifyModeCode: verifyCode,
-          verifyType: AttendanceParser.getVerifyTypeString(verifyCode),
-          attendanceStateCode: state,
-          attendanceType: AttendanceParser.getAttendanceTypeString(state),
-          type: state,
-        };
-      });
+      if (rawData?.err) {
+        console.warn("[ZK Service] Notice during getAttendances:", rawData.err.message || rawData.err);
+      }
+      const rawList = Array.isArray(rawData?.data) ? rawData.data : [];
+      const records: ZKAttendanceRecord[] = rawList
+        .filter((rec: any) => rec && (rec.deviceUserId || rec.employeeId))
+        .map((rec: any) => {
+          const state = typeof rec.type === 'number' ? rec.type : (rec.attendanceStateCode ?? 0);
+          const verifyCode = typeof rec.verifyMode === 'number' ? rec.verifyMode : (rec.verifyModeCode ?? 0);
+          const parsedTime = rec.recordTime ? new Date(rec.recordTime) : (rec.timestamp ? new Date(rec.timestamp) : new Date());
+          const uid = String(rec.deviceUserId || rec.employeeId || '').trim();
+          return {
+            employeeId: uid,
+            deviceUserId: uid,
+            timestamp: parsedTime,
+            recordTime: parsedTime,
+            verifyModeCode: verifyCode,
+            verifyType: AttendanceParser.getVerifyTypeString(verifyCode),
+            attendanceStateCode: state,
+            attendanceType: AttendanceParser.getAttendanceTypeString(state),
+            type: state,
+          };
+        });
 
       return AttendanceNormalizer.normalize(records);
     } catch (error) {

@@ -11,6 +11,8 @@
     },
     "files": [
       "main.js",
+      "build/icons/**/*",
+      "public/**/*",
       "!node_modules"
     ],
     "extraResources": [
@@ -24,6 +26,13 @@
       {
         "from": "public",
         "to": "standalone/public",
+        "filter": [
+          "**/*"
+        ]
+      },
+      {
+        "from": "build/icons",
+        "to": "build/icons",
         "filter": [
           "**/*"
         ]
@@ -45,9 +54,13 @@
     "lint": "eslint",
     "postinstall": "prisma generate",
     "db:push": "prisma db push",
+    "db:seed": "node prisma/seed.js",
     "build:copy-assets": "node scripts/copy-assets.mjs",
     "electron:dev": "npm run build && npm run build:copy-assets && npx electron .",
     "electron:build": "npm run build && npm run build:copy-assets && npx electron-builder build --win"
+  },
+  "prisma": {
+    "seed": "node prisma/seed.js"
   },
   "devDependencies": {
     "@hookform/resolvers": "^5.2.2",
