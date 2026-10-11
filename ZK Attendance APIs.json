@@ -154,13 +154,13 @@
           }
         },
         {
-          "name": "2.2 Sync Data - Optimized (مزامنة ذكية فائقة السرعة مع فلاتر)",
+          "name": "2.2 Sync Data - Optimized (مزامنة ذكية فائقة السرعة مع فلاتر وباجينيشن)",
           "request": {
             "method": "POST",
             "header": [],
-            "description": "مزامنة بصمات الحضور من الجهاز إلى قاعدة البيانات بكفاءة عالية. تدعم فلاتر التاريخ، موظف محدد، وتحديد حد أقصى (limit). القيمة الافتراضية لـ includeData هي false لتجنب الحجم الهائل للبيانات في الـ Network، ويمكن تفعيلها إلى true عند الحاجة لعرض البيانات الخام.",
+            "description": "مزامنة بصمات الحضور من الجهاز إلى قاعدة البيانات بكفاءة عالية. تدعم فلاتر التاريخ، موظف محدد، وتحديد حد أقصى (limit). عند تفعيل includeData=true لعرض السجلات، يتم تطبيق باجينيشن كامل (page و dataLimit) تلقائياً بحيث لا يتم تحميل آلاف أو مئات الآلاف من السجلات دفعة واحدة، مما يحافظ على سرعة وسلاسة الاستجابة.",
             "url": {
-              "raw": "{{baseUrl}}/api/devices/{{deviceId}}/sync?startDate=&endDate=&deviceUserId=&limit=&includeData=false&syncUsers=true",
+              "raw": "{{baseUrl}}/api/devices/{{deviceId}}/sync?startDate=&endDate=&deviceUserId=&limit=&includeData=false&page=1&dataLimit=50&syncUsers=true",
               "host": ["{{baseUrl}}"],
               "path": ["api", "devices", "{{deviceId}}", "sync"],
               "query": [
@@ -182,12 +182,22 @@
                 {
                   "key": "limit",
                   "value": "",
-                  "description": "الحد الأقصى لعدد السجلات المراد معالجتها في هذه العملية"
+                  "description": "الحد الأقصى الإجمالي لعدد السجلات المراد سحبها ومعالجتها من الجهاز"
                 },
                 {
                   "key": "includeData",
                   "value": "false",
-                  "description": "false لتقليل استهلاك الباندويث وتسريع الرد إلى أجزاء من الثانية، أو true لإرجاع كامل مصفوفة السجلات"
+                  "description": "false لتقليل استهلاك الباندويث وتسريع الرد، أو true لإرجاع السجلات عبر باجينيشن"
+                },
+                {
+                  "key": "page",
+                  "value": "1",
+                  "description": "رقم صفحة السجلات المعروضة في مصفوفة data (باجينيشن لمنع البطء)"
+                },
+                {
+                  "key": "dataLimit",
+                  "value": "50",
+                  "description": "عدد السجلات في الصفحة الواحدة لمصفوفة data (الافتراضي 50)"
                 },
                 {
                   "key": "syncUsers",

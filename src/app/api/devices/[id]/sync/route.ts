@@ -10,11 +10,13 @@ export async function POST(req: Request, { params }: Params) {
     const url = new URL(req.url);
     const searchParams = url.searchParams;
 
-    // Filters & Performance optimization options
+    // Filters, Pagination & Performance optimization options
     const startDateParam = searchParams.get("startDate");
     const endDateParam = searchParams.get("endDate");
     const deviceUserIdParam = searchParams.get("deviceUserId") || searchParams.get("userId");
     const limitParam = searchParams.get("limit");
+    const pageParam = searchParams.get("page");
+    const dataLimitParam = searchParams.get("dataLimit"); // limit records returned in data array
     const includeDataParam = searchParams.get("includeData"); // default false for blazing fast response
     const syncUsersParam = searchParams.get("syncUsers"); // default true
 
@@ -23,7 +25,14 @@ export async function POST(req: Request, { params }: Params) {
     if (filterEndDate && endDateParam && endDateParam.length === 10) {
       filterEndDate.setHours(23, 59, 59, 999);
     }
-    const maxLimit = limitParam ? Math.max(1, parseInt(limitParam)) : null;
+    const maxProcessLimit = limitParam ? Math.max(1, parseInt(limitParam)) : null;
+    const page = Math.max(1, parseInt(pageParam ?? "1"));
+    const dataLimit = dataLimitParam
+      ? Math.max(1, parseInt(dataLimitParam))
+      : limitParam
+      ? Math.max(1, parseInt(limitParam))
+      : 50; // default safe pagination slice (50 items) instead of dumping 100k items
+
     const shouldSyncUsers = syncUsersParam !== "false" && syncUsersParam !== "0";
     const returnData = includeDataParam === "true" || includeDataParam === "1";
 
@@ -129,8 +138,8 @@ export async function POST(req: Request, { params }: Params) {
         (r) => r.recordTime <= filterEndDate
       );
     }
-    if (maxLimit && maxLimit > 0) {
-      filteredAttendance = filteredAttendance.slice(0, maxLimit);
+    if (maxProcessLimit && maxProcessLimit > 0) {
+      filteredAttendance = filteredAttendance.slice(0, maxProcessLimit);
     }
 
     // Load only existing attendance records that match the device to keep memory minimal
@@ -226,6 +235,12 @@ export async function POST(req: Request, { params }: Params) {
 
     console.log(`[Sync] Finished: Inserted ${inserted} new records from ${filteredAttendance.length} records processed (Device total: ${result.attendance.length}).`);
 
+    // Paginate data array if requested, so even with 100k records it never breaks the client or network
+    const totalDataRecords = filteredAttendance.length;
+    const totalPages = Math.ceil(totalDataRecords / dataLimit);
+    const skip = (page - 1) * dataLimit;
+    const paginatedData = returnData ? filteredAttendance.slice(skip, skip + dataLimit) : undefined;
+
     return NextResponse.json({
       success: true,
       message: `تمت المزامنة بنجاح: تم حفظ ${inserted} سجل جديد من أصل ${filteredAttendance.length} سجل تمت معالجتها`,
@@ -234,13 +249,21 @@ export async function POST(req: Request, { params }: Params) {
       inserted,
       updated: typeUpdates.length,
       newEmployees: employeesInserted,
-      // For peak network speed and minimal payload, only return heavy data array if explicitly requested
-      data: returnData ? filteredAttendance : undefined,
+      // Paginated array when includeData=true (e.g. 50 items per page by default)
+      data: paginatedData,
+      pagination: returnData
+        ? {
+            page,
+            limit: dataLimit,
+            total: totalDataRecords,
+            totalPages,
+          }
+        : undefined,
       filtersApplied: {
         deviceUserId: deviceUserIdParam || null,
         startDate: startDateParam || null,
         endDate: endDateParam || null,
-        limit: maxLimit,
+        limit: maxProcessLimit,
       },
       debug: {
         info: result.info,
