@@ -1,9 +1,29 @@
 import { NextResponse } from "next/server";
+import { zkService } from "@/services/zk.service";
 import { prisma } from "@/lib/prisma";
 
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
+    const ip = searchParams.get("ip");
+    const port = parseInt(searchParams.get("port") || "4370", 10);
+
+    // If IP is passed, fetch directly from device without database
+    if (ip) {
+      const result = await zkService.getAttendance(ip, port);
+      if (!result.success || !result.data) {
+        return NextResponse.json({ success: false, error: result.error || "فشل الاتصال بالجهاز" }, { status: 500 });
+      }
+      let records = result.data;
+      const startDate = searchParams.get("startDate");
+      const endDate = searchParams.get("endDate");
+      const deviceUserId = searchParams.get("deviceUserId") || searchParams.get("userId");
+      if (startDate) records = records.filter(r => new Date(r.timestamp || r.recordTime) >= new Date(startDate));
+      if (endDate) records = records.filter(r => new Date(r.timestamp || r.recordTime) <= new Date(endDate));
+      if (deviceUserId) records = records.filter(r => String(r.deviceUserId || r.employeeId).trim() === String(deviceUserId).trim());
+      return NextResponse.json({ success: true, total: records.length, data: records });
+    }
+
     const deviceId = searchParams.get("deviceId") || undefined;
     const employeeId = searchParams.get("employeeId") || undefined;
     const deviceUserId = searchParams.get("deviceUserId") || undefined;
