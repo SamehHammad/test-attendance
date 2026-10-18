@@ -11,10 +11,29 @@ export async function parseDeviceParams(req: Request): Promise<{ device?: ZKDire
   try {
     let body: any = {};
     if (req.method !== "GET" && req.method !== "HEAD") {
-      try {
-        body = await req.json();
-      } catch {
-        body = {};
+      const contentType = req.headers.get("content-type") || "";
+      if (contentType.includes("multipart/form-data") || contentType.includes("application/x-www-form-urlencoded")) {
+        try {
+          const formData = await req.formData();
+          formData.forEach((value, key) => {
+            body[key] = value;
+          });
+        } catch {
+          body = {};
+        }
+      } else {
+        try {
+          body = await req.json();
+        } catch {
+          try {
+            const formData = await req.formData();
+            formData.forEach((value, key) => {
+              body[key] = value;
+            });
+          } catch {
+            body = {};
+          }
+        }
       }
     }
 

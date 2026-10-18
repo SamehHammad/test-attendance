@@ -28,28 +28,29 @@
   ],
   "item": [
     {
-      "name": "0. العمليات المباشرة بدون داتا بيز (Direct ZK APIs)",
+      "name": "0. العمليات المباشرة (Direct ZK APIs)",
       "item": [
         {
           "name": "Test Connection (Direct)",
           "request": {
             "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
+            "header": [],
             "body": {
-              "mode": "raw",
-              "raw": "{\n  \"ip\": \"{{deviceIp}}\",\n  \"port\": {{devicePort}}\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "ip",
+                  "value": "{{deviceIp}}",
+                  "type": "text"
+                },
+                {
+                  "key": "port",
+                  "value": "{{devicePort}}",
+                  "type": "text"
                 }
-              }
+              ]
             },
-            "description": "فحص الاتصال بالجهاز مباشرة باستخدام الـ IP والـ Port دون الحاجة لقاعدة بيانات",
+            "description": "فحص الاتصال بالجهاز وقراءة معلوماته",
             "url": {
               "raw": "{{baseUrl}}/api/zk/test-connection",
               "host": ["{{baseUrl}}"],
@@ -61,22 +62,47 @@
           "name": "Get Attendance Logs (Direct)",
           "request": {
             "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
+            "header": [],
             "body": {
-              "mode": "raw",
-              "raw": "{\n  \"ip\": \"{{deviceIp}}\",\n  \"port\": {{devicePort}},\n  \"startDate\": \"\",\n  \"endDate\": \"\",\n  \"deviceUserId\": \"\",\n  \"limit\": 100\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "ip",
+                  "value": "{{deviceIp}}",
+                  "type": "text"
+                },
+                {
+                  "key": "port",
+                  "value": "{{devicePort}}",
+                  "type": "text"
+                },
+                {
+                  "key": "startDate",
+                  "value": "",
+                  "description": "من تاريخ (سنة-شهر-يوم)",
+                  "type": "text"
+                },
+                {
+                  "key": "endDate",
+                  "value": "",
+                  "description": "إلى تاريخ (سنة-شهر-يوم)",
+                  "type": "text"
+                },
+                {
+                  "key": "deviceUserId",
+                  "value": "",
+                  "description": "رقم بصمة موظف محدد",
+                  "type": "text"
+                },
+                {
+                  "key": "limit",
+                  "value": "100",
+                  "description": "الحد الأقصى لعدد السجلات",
+                  "type": "text"
                 }
-              }
+              ]
             },
-            "description": "سحب الحركات من الجهاز في الذاكرة فوراً مع الفلترة حسب التاريخ والمستخدم دون حفظها في الداتا بيز",
+            "description": "سحب سجلات الحضور مع إمكانية الفلترة",
             "url": {
               "raw": "{{baseUrl}}/api/zk/attendance",
               "host": ["{{baseUrl}}"],
@@ -88,22 +114,23 @@
           "name": "Get Users (Direct)",
           "request": {
             "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
+            "header": [],
             "body": {
-              "mode": "raw",
-              "raw": "{\n  \"ip\": \"{{deviceIp}}\",\n  \"port\": {{devicePort}}\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "ip",
+                  "value": "{{deviceIp}}",
+                  "type": "text"
+                },
+                {
+                  "key": "port",
+                  "value": "{{devicePort}}",
+                  "type": "text"
                 }
-              }
+              ]
             },
-            "description": "قراءة قائمة الموظفين وأرقام البصمات المسجلة على الماكينة مباشرة",
+            "description": "قائمة الموظفين المسجلين على الجهاز",
             "url": {
               "raw": "{{baseUrl}}/api/zk/users",
               "host": ["{{baseUrl}}"],
@@ -115,22 +142,23 @@
           "name": "Sync Time (Direct)",
           "request": {
             "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
+            "header": [],
             "body": {
-              "mode": "raw",
-              "raw": "{\n  \"ip\": \"{{deviceIp}}\",\n  \"port\": {{devicePort}}\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "ip",
+                  "value": "{{deviceIp}}",
+                  "type": "text"
+                },
+                {
+                  "key": "port",
+                  "value": "{{devicePort}}",
+                  "type": "text"
                 }
-              }
+              ]
             },
-            "description": "ضبط ساعة الجهاز على توقيت الكمبيوتر الحالي مباشرة",
+            "description": "ضبط ساعة الجهاز على التوقيت الحالي",
             "url": {
               "raw": "{{baseUrl}}/api/zk/sync-time",
               "host": ["{{baseUrl}}"],
@@ -142,22 +170,23 @@
           "name": "Device State & Capacity (Direct)",
           "request": {
             "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
+            "header": [],
             "body": {
-              "mode": "raw",
-              "raw": "{\n  \"ip\": \"{{deviceIp}}\",\n  \"port\": {{devicePort}}\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "ip",
+                  "value": "{{deviceIp}}",
+                  "type": "text"
+                },
+                {
+                  "key": "port",
+                  "value": "{{devicePort}}",
+                  "type": "text"
                 }
-              }
+              ]
             },
-            "description": "قراءة سعة الذاكرة وعدد البصمات وحالة الماكينة الحالية مباشرة",
+            "description": "معرفة حالة وسعة الجهاز الحالية",
             "url": {
               "raw": "{{baseUrl}}/api/zk/device-state",
               "host": ["{{baseUrl}}"],
@@ -169,22 +198,23 @@
           "name": "Device Parameters & Serial (Direct)",
           "request": {
             "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
+            "header": [],
             "body": {
-              "mode": "raw",
-              "raw": "{\n  \"ip\": \"{{deviceIp}}\",\n  \"port\": {{devicePort}}\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "ip",
+                  "value": "{{deviceIp}}",
+                  "type": "text"
+                },
+                {
+                  "key": "port",
+                  "value": "{{devicePort}}",
+                  "type": "text"
                 }
-              }
+              ]
             },
-            "description": "قراءة السيريال نمبر، إصدار الفيرموير، وماك أدرس الجهاز مباشرة",
+            "description": "معلومات السيريال نمبر وإصدار الجهاز",
             "url": {
               "raw": "{{baseUrl}}/api/zk/parameters",
               "host": ["{{baseUrl}}"],
@@ -196,22 +226,23 @@
           "name": "Unlock Door (Direct)",
           "request": {
             "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
+            "header": [],
             "body": {
-              "mode": "raw",
-              "raw": "{\n  \"ip\": \"{{deviceIp}}\",\n  \"port\": {{devicePort}}\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "ip",
+                  "value": "{{deviceIp}}",
+                  "type": "text"
+                },
+                {
+                  "key": "port",
+                  "value": "{{devicePort}}",
+                  "type": "text"
                 }
-              }
+              ]
             },
-            "description": "فتح الباب / الريلاي عن بعد مباشرة",
+            "description": "فتح الباب عن بُعد",
             "url": {
               "raw": "{{baseUrl}}/api/zk/unlock-door",
               "host": ["{{baseUrl}}"],
@@ -223,22 +254,23 @@
           "name": "Clear Attendance Logs (Direct)",
           "request": {
             "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
+            "header": [],
             "body": {
-              "mode": "raw",
-              "raw": "{\n  \"ip\": \"{{deviceIp}}\",\n  \"port\": {{devicePort}}\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "ip",
+                  "value": "{{deviceIp}}",
+                  "type": "text"
+                },
+                {
+                  "key": "port",
+                  "value": "{{devicePort}}",
+                  "type": "text"
                 }
-              }
+              ]
             },
-            "description": "تفريغ سجلات الحركات من ذاكرة الماكينة لتوفير المساحة مباشرة",
+            "description": "مسح سجلات الحضور من ذاكرة الجهاز",
             "url": {
               "raw": "{{baseUrl}}/api/zk/clear-logs",
               "host": ["{{baseUrl}}"],
@@ -250,22 +282,23 @@
           "name": "Reboot Device (Direct)",
           "request": {
             "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
+            "header": [],
             "body": {
-              "mode": "raw",
-              "raw": "{\n  \"ip\": \"{{deviceIp}}\",\n  \"port\": {{devicePort}}\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "ip",
+                  "value": "{{deviceIp}}",
+                  "type": "text"
+                },
+                {
+                  "key": "port",
+                  "value": "{{devicePort}}",
+                  "type": "text"
                 }
-              }
+              ]
             },
-            "description": "إعادة تشغيل الجهاز عن بعد مباشرة",
+            "description": "إعادة تشغيل الجهاز",
             "url": {
               "raw": "{{baseUrl}}/api/zk/reboot",
               "host": ["{{baseUrl}}"],
@@ -277,22 +310,23 @@
           "name": "Disable Device (Direct)",
           "request": {
             "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
+            "header": [],
             "body": {
-              "mode": "raw",
-              "raw": "{\n  \"ip\": \"{{deviceIp}}\",\n  \"port\": {{devicePort}}\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "ip",
+                  "value": "{{deviceIp}}",
+                  "type": "text"
+                },
+                {
+                  "key": "port",
+                  "value": "{{devicePort}}",
+                  "type": "text"
                 }
-              }
+              ]
             },
-            "description": "تعطيل الشاشة والأزرار أثناء الصيانة مباشرة",
+            "description": "تعطيل شاشة وأزرار الجهاز مؤقتاً",
             "url": {
               "raw": "{{baseUrl}}/api/zk/disable-device",
               "host": ["{{baseUrl}}"],
@@ -304,22 +338,23 @@
           "name": "Enable Device (Direct)",
           "request": {
             "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
+            "header": [],
             "body": {
-              "mode": "raw",
-              "raw": "{\n  \"ip\": \"{{deviceIp}}\",\n  \"port\": {{devicePort}}\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "ip",
+                  "value": "{{deviceIp}}",
+                  "type": "text"
+                },
+                {
+                  "key": "port",
+                  "value": "{{devicePort}}",
+                  "type": "text"
                 }
-              }
+              ]
             },
-            "description": "إعادة تفعيل الجهاز للاستخدام مباشرة",
+            "description": "إتاحة الجهاز للاستخدام",
             "url": {
               "raw": "{{baseUrl}}/api/zk/enable-device",
               "host": ["{{baseUrl}}"],
@@ -331,22 +366,23 @@
           "name": "Power Off Device (Direct)",
           "request": {
             "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
+            "header": [],
             "body": {
-              "mode": "raw",
-              "raw": "{\n  \"ip\": \"{{deviceIp}}\",\n  \"port\": {{devicePort}}\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "ip",
+                  "value": "{{deviceIp}}",
+                  "type": "text"
+                },
+                {
+                  "key": "port",
+                  "value": "{{devicePort}}",
+                  "type": "text"
                 }
-              }
+              ]
             },
-            "description": "إيقاف تشغيل الجهاز نهائياً مباشرة",
+            "description": "إيقاف تشغيل الجهاز نهائياً",
             "url": {
               "raw": "{{baseUrl}}/api/zk/power-off",
               "host": ["{{baseUrl}}"],

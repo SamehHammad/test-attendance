@@ -2,10 +2,13 @@
   "name": "zk-attendance",
   "version": "1.0.0",
   "private": true,
+  "description": "Trivvo Hr Attendance Management",
+  "author": "Hesabate",
   "main": "main.js",
   "build": {
     "appId": "com.hesabate.attendance",
     "productName": "Trivvo Hr",
+    "compression": "normal",
     "directories": {
       "output": "dist-electron"
     },
@@ -41,6 +44,12 @@
     "win": {
       "target": "nsis",
       "icon": "build/icons/icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
     },
     "mac": {
       "target": "dmg",
