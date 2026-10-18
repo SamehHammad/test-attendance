@@ -1,13 +1,23 @@
 {
   "info": {
-    "name": "ZK Attendance APIs - Pro",
-    "description": "مجموعة واجهات برمجة التطبيقات الاحترافية لنظام الحضور والانصراف وأجهزة ZKTeco البيومترية مع دعم الفلاتر المتقدمة، التصفح (Pagination)، والتحسينات فائقة السرعة للأداء.",
+    "name": "ZK Attendance APIs - الساعة",
+    "description": "واجهات برمجة نظام الحضور وأجهزة ZKTeco",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
     {
       "key": "baseUrl",
       "value": "http://localhost:3000",
+      "type": "string"
+    },
+    {
+      "key": "deviceIp",
+      "value": "192.168.1.201",
+      "type": "string"
+    },
+    {
+      "key": "devicePort",
+      "value": "4370",
       "type": "string"
     },
     {
@@ -18,45 +28,376 @@
   ],
   "item": [
     {
+      "name": "0. العمليات المباشرة بدون داتا بيز (Direct ZK APIs)",
+      "item": [
+        {
+          "name": "Test Connection (Direct)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ip\": \"{{deviceIp}}\",\n  \"port\": {{devicePort}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "فحص الاتصال بالجهاز مباشرة باستخدام الـ IP والـ Port دون الحاجة لقاعدة بيانات",
+            "url": {
+              "raw": "{{baseUrl}}/api/zk/test-connection",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "zk", "test-connection"]
+            }
+          }
+        },
+        {
+          "name": "Get Attendance Logs (Direct)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ip\": \"{{deviceIp}}\",\n  \"port\": {{devicePort}},\n  \"startDate\": \"\",\n  \"endDate\": \"\",\n  \"deviceUserId\": \"\",\n  \"limit\": 100\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "سحب الحركات من الجهاز في الذاكرة فوراً مع الفلترة حسب التاريخ والمستخدم دون حفظها في الداتا بيز",
+            "url": {
+              "raw": "{{baseUrl}}/api/zk/attendance",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "zk", "attendance"]
+            }
+          }
+        },
+        {
+          "name": "Get Users (Direct)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ip\": \"{{deviceIp}}\",\n  \"port\": {{devicePort}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "قراءة قائمة الموظفين وأرقام البصمات المسجلة على الماكينة مباشرة",
+            "url": {
+              "raw": "{{baseUrl}}/api/zk/users",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "zk", "users"]
+            }
+          }
+        },
+        {
+          "name": "Sync Time (Direct)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ip\": \"{{deviceIp}}\",\n  \"port\": {{devicePort}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "ضبط ساعة الجهاز على توقيت الكمبيوتر الحالي مباشرة",
+            "url": {
+              "raw": "{{baseUrl}}/api/zk/sync-time",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "zk", "sync-time"]
+            }
+          }
+        },
+        {
+          "name": "Device State & Capacity (Direct)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ip\": \"{{deviceIp}}\",\n  \"port\": {{devicePort}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "قراءة سعة الذاكرة وعدد البصمات وحالة الماكينة الحالية مباشرة",
+            "url": {
+              "raw": "{{baseUrl}}/api/zk/device-state",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "zk", "device-state"]
+            }
+          }
+        },
+        {
+          "name": "Device Parameters & Serial (Direct)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ip\": \"{{deviceIp}}\",\n  \"port\": {{devicePort}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "قراءة السيريال نمبر، إصدار الفيرموير، وماك أدرس الجهاز مباشرة",
+            "url": {
+              "raw": "{{baseUrl}}/api/zk/parameters",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "zk", "parameters"]
+            }
+          }
+        },
+        {
+          "name": "Unlock Door (Direct)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ip\": \"{{deviceIp}}\",\n  \"port\": {{devicePort}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "فتح الباب / الريلاي عن بعد مباشرة",
+            "url": {
+              "raw": "{{baseUrl}}/api/zk/unlock-door",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "zk", "unlock-door"]
+            }
+          }
+        },
+        {
+          "name": "Clear Attendance Logs (Direct)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ip\": \"{{deviceIp}}\",\n  \"port\": {{devicePort}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "تفريغ سجلات الحركات من ذاكرة الماكينة لتوفير المساحة مباشرة",
+            "url": {
+              "raw": "{{baseUrl}}/api/zk/clear-logs",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "zk", "clear-logs"]
+            }
+          }
+        },
+        {
+          "name": "Reboot Device (Direct)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ip\": \"{{deviceIp}}\",\n  \"port\": {{devicePort}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "إعادة تشغيل الجهاز عن بعد مباشرة",
+            "url": {
+              "raw": "{{baseUrl}}/api/zk/reboot",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "zk", "reboot"]
+            }
+          }
+        },
+        {
+          "name": "Disable Device (Direct)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ip\": \"{{deviceIp}}\",\n  \"port\": {{devicePort}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "تعطيل الشاشة والأزرار أثناء الصيانة مباشرة",
+            "url": {
+              "raw": "{{baseUrl}}/api/zk/disable-device",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "zk", "disable-device"]
+            }
+          }
+        },
+        {
+          "name": "Enable Device (Direct)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ip\": \"{{deviceIp}}\",\n  \"port\": {{devicePort}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "إعادة تفعيل الجهاز للاستخدام مباشرة",
+            "url": {
+              "raw": "{{baseUrl}}/api/zk/enable-device",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "zk", "enable-device"]
+            }
+          }
+        },
+        {
+          "name": "Power Off Device (Direct)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ip\": \"{{deviceIp}}\",\n  \"port\": {{devicePort}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "إيقاف تشغيل الجهاز نهائياً مباشرة",
+            "url": {
+              "raw": "{{baseUrl}}/api/zk/power-off",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "zk", "power-off"]
+            }
+          }
+        }
+      ]
+    },
+    {
       "name": "1. الأجهزة (Devices)",
       "item": [
         {
-          "name": "1.1 Get All Devices (جلب جميع الأجهزة مع فلاتر وبحث)",
+          "name": "Get All Devices",
           "request": {
             "method": "GET",
             "header": [],
-            "description": "جلب قائمة أجهزة البصمة مع دعم الفلترة حسب الاسم أو الآي بي (search)، وحالة التفعيل (isActive)، ودعم التصفح (page & limit) لتحقيق أقصى سرعة استجابة.",
+            "description": "عرض كل أجهزة البصمة المضافة",
             "url": {
-              "raw": "{{baseUrl}}/api/devices?search=&isActive=&page=1&limit=20",
+              "raw": "{{baseUrl}}/api/devices?page=1&limit=20",
               "host": ["{{baseUrl}}"],
               "path": ["api", "devices"],
               "query": [
                 {
                   "key": "search",
                   "value": "",
-                  "description": "بحث باسم الجهاز أو الآي بي أو الموقع (اختياري)"
+                  "description": "بحث باسم الجهاز، الـ IP، أو المكان",
+                  "disabled": true
                 },
                 {
                   "key": "isActive",
                   "value": "",
-                  "description": "true أو false للفلترة حسب حالة التشغيل (اختياري)"
+                  "description": "الأجهزة النشطة فقط (true أو false)",
+                  "disabled": true
                 },
                 {
                   "key": "page",
                   "value": "1",
-                  "description": "رقم الصفحة للتصفح السريع"
+                  "description": "رقم الصفحة"
                 },
                 {
                   "key": "limit",
                   "value": "20",
-                  "description": "عدد الأجهزة في كل صفحة"
+                  "description": "عدد النتائج في الصفحة"
                 }
               ]
             }
           }
         },
         {
-          "name": "1.2 Add New Device (إضافة جهاز جديد)",
+          "name": "Add Device",
           "request": {
             "method": "POST",
             "header": [
@@ -68,7 +409,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Main Door Device\",\n  \"ip\": \"192.168.1.201\",\n  \"port\": 4370,\n  \"location\": \"Main Entrance\"\n}",
+              "raw": "{\n  \"name\": \"جهاز المدخل الرئيسي\",\n  \"ip\": \"192.168.1.201\",\n  \"port\": 4370,\n  \"location\": \"البوابة الرئيسية\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -83,11 +424,11 @@
           }
         },
         {
-          "name": "1.3 Get Device Details (تفاصيل الجهاز)",
+          "name": "Get Device",
           "request": {
             "method": "GET",
             "header": [],
-            "description": "عرض بيانات جهاز بصمة محدد مع إحصائيات عدد الموظفين وسجلات الحضور.",
+            "description": "عرض بيانات جهاز محدد",
             "url": {
               "raw": "{{baseUrl}}/api/devices/{{deviceId}}",
               "host": ["{{baseUrl}}"],
@@ -96,7 +437,7 @@
           }
         },
         {
-          "name": "1.4 Update Device (تحديث الجهاز)",
+          "name": "Update Device",
           "request": {
             "method": "PUT",
             "header": [
@@ -108,7 +449,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Updated Device Name\",\n  \"ip\": \"192.168.1.202\",\n  \"port\": 4370,\n  \"location\": \"Second Floor\",\n  \"isActive\": true\n}",
+              "raw": "{\n  \"name\": \"جهاز الدور الثاني\",\n  \"ip\": \"192.168.1.202\",\n  \"port\": 4370,\n  \"location\": \"الدور الثاني\",\n  \"isActive\": true\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -123,11 +464,11 @@
           }
         },
         {
-          "name": "1.5 Delete Device (حذف الجهاز)",
+          "name": "Delete Device",
           "request": {
             "method": "DELETE",
             "header": [],
-            "description": "حذف الجهاز وكافة ارتباطاته من قاعدة البيانات.",
+            "description": "حذف الجهاز من النظام",
             "url": {
               "raw": "{{baseUrl}}/api/devices/{{deviceId}}",
               "host": ["{{baseUrl}}"],
@@ -138,14 +479,14 @@
       ]
     },
     {
-      "name": "2. المزامنة والربط المباشر (Sync & Device Operations)",
+      "name": "2. عمليات الجهاز (Operations & Sync)",
       "item": [
         {
-          "name": "2.1 Test Connection (اختبار الاتصال بالجهاز)",
+          "name": "Test Connection",
           "request": {
             "method": "POST",
             "header": [],
-            "description": "فحص اتصال TCP/UDP بجهاز البصمة والتأكد من استجابته وحالته.",
+            "description": "تجربة الاتصال بالجهاز والتأكد إنه شغال",
             "url": {
               "raw": "{{baseUrl}}/api/devices/{{deviceId}}/test-connection",
               "host": ["{{baseUrl}}"],
@@ -154,66 +495,74 @@
           }
         },
         {
-          "name": "2.2 Sync Data - Optimized (مزامنة ذكية فائقة السرعة مع فلاتر وباجينيشن)",
+          "name": "Sync Attendance",
           "request": {
             "method": "POST",
             "header": [],
-            "description": "مزامنة بصمات الحضور من الجهاز إلى قاعدة البيانات بكفاءة عالية. تدعم فلاتر التاريخ، موظف محدد، وتحديد حد أقصى (limit). عند تفعيل includeData=true لعرض السجلات، يتم تطبيق باجينيشن كامل (page و dataLimit) تلقائياً بحيث لا يتم تحميل آلاف أو مئات الآلاف من السجلات دفعة واحدة، مما يحافظ على سرعة وسلاسة الاستجابة.",
+            "description": "سحب حركات الحضور من الجهاز وحفظها في الداتا بيز",
             "url": {
-              "raw": "{{baseUrl}}/api/devices/{{deviceId}}/sync?startDate=&endDate=&deviceUserId=&limit=&includeData=false&page=1&dataLimit=50&syncUsers=true",
+              "raw": "{{baseUrl}}/api/devices/{{deviceId}}/sync",
               "host": ["{{baseUrl}}"],
               "path": ["api", "devices", "{{deviceId}}", "sync"],
               "query": [
                 {
                   "key": "startDate",
                   "value": "",
-                  "description": "فلترة السجلات من تاريخ محدد (YYYY-MM-DD)"
+                  "description": "من تاريخ (سنة-شهر-يوم)",
+                  "disabled": true
                 },
                 {
                   "key": "endDate",
                   "value": "",
-                  "description": "فلترة السجلات حتى تاريخ محدد (YYYY-MM-DD)"
+                  "description": "إلى تاريخ (سنة-شهر-يوم)",
+                  "disabled": true
                 },
                 {
                   "key": "deviceUserId",
                   "value": "",
-                  "description": "مزامنة سجلات موظف معين فقط برقم البصمة"
+                  "description": "رقم بصمة موظف محدد",
+                  "disabled": true
                 },
                 {
                   "key": "limit",
                   "value": "",
-                  "description": "الحد الأقصى الإجمالي لعدد السجلات المراد سحبها ومعالجتها من الجهاز"
+                  "description": "أقصى عدد حركات يتم سحبها",
+                  "disabled": true
                 },
                 {
                   "key": "includeData",
                   "value": "false",
-                  "description": "false لتقليل استهلاك الباندويث وتسريع الرد، أو true لإرجاع السجلات عبر باجينيشن"
+                  "description": "عرض الحركات في الرد (خليها false للسرعة)",
+                  "disabled": true
                 },
                 {
                   "key": "page",
                   "value": "1",
-                  "description": "رقم صفحة السجلات المعروضة في مصفوفة data (باجينيشن لمنع البطء)"
+                  "description": "رقم الصفحة لعرض الحركات",
+                  "disabled": true
                 },
                 {
                   "key": "dataLimit",
                   "value": "50",
-                  "description": "عدد السجلات في الصفحة الواحدة لمصفوفة data (الافتراضي 50)"
+                  "description": "عدد الحركات في الصفحة",
+                  "disabled": true
                 },
                 {
                   "key": "syncUsers",
                   "value": "true",
-                  "description": "true لمزامنة وتحديث أسماء المستخدمين مع السجلات"
+                  "description": "تحديث أسماء الموظفين مع السحب",
+                  "disabled": true
                 }
               ]
             }
           }
         },
         {
-          "name": "2.3 Sync Users (سحب ومزامنة الموظفين من الجهاز)",
+          "name": "Sync Users",
           "request": {
             "method": "POST",
             "header": [],
-            "description": "سحب قائمة الموظفين وبصماتهم المسجلة في جهاز ZKTeco وتحديثها في قاعدة البيانات.",
+            "description": "سحب كل الموظفين المسجلين على الجهاز",
             "url": {
               "raw": "{{baseUrl}}/api/devices/{{deviceId}}/sync-users",
               "host": ["{{baseUrl}}"],
@@ -222,11 +571,11 @@
           }
         },
         {
-          "name": "2.4 Sync Time (مزامنة وضبط توقيت الجهاز)",
+          "name": "Sync Time",
           "request": {
             "method": "POST",
             "header": [],
-            "description": "مزامنة ساعة جهاز البصمة مع توقيت السيرفر لضمان دقة أوقات الحضور والانصراف.",
+            "description": "ضبط ساعة الجهاز على توقيت الكمبيوتر",
             "url": {
               "raw": "{{baseUrl}}/api/devices/{{deviceId}}/sync-time",
               "host": ["{{baseUrl}}"],
@@ -235,11 +584,11 @@
           }
         },
         {
-          "name": "2.5 Get Device State (حالة الجهاز وسعته التخزينية)",
+          "name": "Device State",
           "request": {
             "method": "GET",
             "header": [],
-            "description": "جلب إحصائيات الذاكرة وسعة السجلات والمستخدمين والبصمات المخزنة في جهاز ZKTeco.",
+            "description": "معرفة المساحة وعدد البصمات والحركات في الجهاز",
             "url": {
               "raw": "{{baseUrl}}/api/devices/{{deviceId}}/device-state",
               "host": ["{{baseUrl}}"],
@@ -248,11 +597,11 @@
           }
         },
         {
-          "name": "2.6 Get Device Parameters (معلمات ومواصفات الجهاز الهاردوير)",
+          "name": "Device Parameters",
           "request": {
             "method": "GET",
             "header": [],
-            "description": "جلب الرقم التسلسلي للسيريال نمبر وإصدار الفيرموير وإعدادات الجهاز الداخلية.",
+            "description": "معلومات السيريال نمبر وإصدار الجهاز",
             "url": {
               "raw": "{{baseUrl}}/api/devices/{{deviceId}}/parameters",
               "host": ["{{baseUrl}}"],
@@ -261,11 +610,11 @@
           }
         },
         {
-          "name": "2.7 Unlock Door (فتح الباب بالتحكم عن بُعد)",
+          "name": "Unlock Door",
           "request": {
             "method": "POST",
             "header": [],
-            "description": "إرسال إشارة للريلاي في الجهاز لفتح الباب إلكترونياً (Access Control).",
+            "description": "فتح الباب عن بُعد",
             "url": {
               "raw": "{{baseUrl}}/api/devices/{{deviceId}}/unlock-door",
               "host": ["{{baseUrl}}"],
@@ -274,11 +623,11 @@
           }
         },
         {
-          "name": "2.8 Clear Logs (مسح سجلات الحضور من الجهاز)",
+          "name": "Clear Logs",
           "request": {
             "method": "POST",
             "header": [],
-            "description": "مسح سجلات الحضور والانصراف المخزنة على هاردوير الجهاز بعد مزامنتها بنجاح لتفريغ ذاكرة الجهاز.",
+            "description": "مسح سجلات الحضور من ذاكرة الجهاز لتفريغ المساحة",
             "url": {
               "raw": "{{baseUrl}}/api/devices/{{deviceId}}/clear-logs",
               "host": ["{{baseUrl}}"],
@@ -287,11 +636,11 @@
           }
         },
         {
-          "name": "2.9 Reboot Device (إعادة تشغيل الجهاز)",
+          "name": "Reboot Device",
           "request": {
             "method": "POST",
             "header": [],
-            "description": "إرسال أمر Restart لإعادة تشغيل جهاز البصمة.",
+            "description": "إعادة تشغيل الجهاز (ريستارت)",
             "url": {
               "raw": "{{baseUrl}}/api/devices/{{deviceId}}/reboot",
               "host": ["{{baseUrl}}"],
@@ -300,11 +649,11 @@
           }
         },
         {
-          "name": "2.10 Power Off Device (إغلاق الجهاز)",
+          "name": "Power Off Device",
           "request": {
             "method": "POST",
             "header": [],
-            "description": "إيقاف تشغيل جهاز البصمة برمجياً.",
+            "description": "قفل الجهاز نهائياً",
             "url": {
               "raw": "{{baseUrl}}/api/devices/{{deviceId}}/power-off",
               "host": ["{{baseUrl}}"],
@@ -313,11 +662,11 @@
           }
         },
         {
-          "name": "2.11 Disable Device (تعطيل قفل الجهاز مؤقتاً)",
+          "name": "Disable Device",
           "request": {
             "method": "POST",
             "header": [],
-            "description": "قفل الشاشة ولوحة المفاتيح في الجهاز أثناء عمليات الصيانة وسحب البيانات.",
+            "description": "تعطيل شاشة وزراير الجهاز مؤقتاً أثناء الصيانة",
             "url": {
               "raw": "{{baseUrl}}/api/devices/{{deviceId}}/disable-device",
               "host": ["{{baseUrl}}"],
@@ -326,11 +675,11 @@
           }
         },
         {
-          "name": "2.12 Enable Device (إعادة تفعيل لوحة الجهاز)",
+          "name": "Enable Device",
           "request": {
             "method": "POST",
             "header": [],
-            "description": "إعادة إتاحة الجهاز للاستخدام وتسجيل بصمات الموظفين.",
+            "description": "تشغيل الجهاز وإتاحته للاستخدام العادي",
             "url": {
               "raw": "{{baseUrl}}/api/devices/{{deviceId}}/enable-device",
               "host": ["{{baseUrl}}"],
@@ -341,48 +690,54 @@
       ]
     },
     {
-      "name": "3. الحضور والانصراف (Attendance Records)",
+      "name": "3. الحضور والانصراف (Attendance)",
       "item": [
         {
-          "name": "3.1 Get Attendance Records (استعلام الحضور مع فلاتر وتصفح كامل)",
+          "name": "Get Attendance",
           "request": {
             "method": "GET",
             "header": [],
-            "description": "جلب سجلات الحضور والانصراف بقاعدة البيانات مع فلاتر متقدمة (deviceId, employeeId, deviceUserId, startDate, endDate, type) ونظام تصفح سريع (Pagination) لتجنب بطء استرجاع آلاف السجلات.",
+            "description": "عرض سجلات الحضور المخزنة مع إمكانية الفلترة",
             "url": {
-              "raw": "{{baseUrl}}/api/attendance?deviceId=&employeeId=&deviceUserId=&startDate=&endDate=&type=&page=1&limit=50",
+              "raw": "{{baseUrl}}/api/attendance?page=1&limit=50",
               "host": ["{{baseUrl}}"],
               "path": ["api", "attendance"],
               "query": [
                 {
                   "key": "deviceId",
                   "value": "",
-                  "description": "معرف الجهاز (اختياري)"
+                  "description": "كود الجهاز",
+                  "disabled": true
                 },
                 {
                   "key": "employeeId",
                   "value": "",
-                  "description": "معرف الموظف الداخلي (اختياري)"
+                  "description": "كود الموظف",
+                  "disabled": true
                 },
                 {
                   "key": "deviceUserId",
                   "value": "",
-                  "description": "رقم البصمة الخاص بالموظف (اختياري)"
+                  "description": "رقم البصمة",
+                  "disabled": true
                 },
                 {
                   "key": "startDate",
                   "value": "",
-                  "description": "تاريخ البداية (YYYY-MM-DD)"
+                  "description": "من تاريخ (سنة-شهر-يوم)",
+                  "disabled": true
                 },
                 {
                   "key": "endDate",
                   "value": "",
-                  "description": "تاريخ النهاية (YYYY-MM-DD)"
+                  "description": "إلى تاريخ (سنة-شهر-يوم)",
+                  "disabled": true
                 },
                 {
                   "key": "type",
                   "value": "",
-                  "description": "نوع الحركة: 0 = دخول (Check-in)، 1 = خروج (Check-out)، إلخ"
+                  "description": "نوع الحركة (0 حضور / 1 انصراف)",
+                  "disabled": true
                 },
                 {
                   "key": "page",
@@ -392,7 +747,7 @@
                 {
                   "key": "limit",
                   "value": "50",
-                  "description": "عدد السجلات في كل صفحة (الحد الأقصى 1000)"
+                  "description": "عدد السجلات في الصفحة"
                 }
               ]
             }
@@ -404,25 +759,27 @@
       "name": "4. الموظفون (Employees)",
       "item": [
         {
-          "name": "4.1 Get Employees (جلب الموظفين مع الفلترة والبحث)",
+          "name": "Get Employees",
           "request": {
             "method": "GET",
             "header": [],
-            "description": "استعلام قائمة الموظفين مع فلترة الجهاز والبحث بالاسم أو رقم البصمة ودعم الـ Pagination.",
+            "description": "عرض قائمة الموظفين المسجلين في النظام",
             "url": {
-              "raw": "{{baseUrl}}/api/employees?deviceId=&search=&page=1&limit=50",
+              "raw": "{{baseUrl}}/api/employees?page=1&limit=50",
               "host": ["{{baseUrl}}"],
               "path": ["api", "employees"],
               "query": [
                 {
                   "key": "deviceId",
                   "value": "",
-                  "description": "معرف الجهاز لفلترة موظفي جهاز محدد (اختياري)"
+                  "description": "فلترة موظفي جهاز معين",
+                  "disabled": true
                 },
                 {
                   "key": "search",
                   "value": "",
-                  "description": "بحث بالاسم أو رقم البصمة (اختياري)"
+                  "description": "بحث بالاسم أو رقم البصمة",
+                  "disabled": true
                 },
                 {
                   "key": "page",
@@ -439,7 +796,7 @@
           }
         },
         {
-          "name": "4.2 Create Employee (إضافة موظف جديد)",
+          "name": "Create Employee",
           "request": {
             "method": "POST",
             "header": [
@@ -468,14 +825,14 @@
       ]
     },
     {
-      "name": "5. لوحة التحكم والإحصائيات (Dashboard)",
+      "name": "5. لوحة التحكم (Dashboard)",
       "item": [
         {
-          "name": "5.1 Get Dashboard Stats (إحصائيات النظام العامة)",
+          "name": "Get Dashboard Stats",
           "request": {
             "method": "GET",
             "header": [],
-            "description": "جلب إحصائيات سريعة للوحة التحكم: إجمالي الأجهزة، الأجهزة النشطة، عدد الموظفين، إجمالي الحركات، وحركات اليوم وآخر 7 أيام.",
+            "description": "أرقام وإحصائيات سريعة للرئيسية وحركات آخر أسبوع",
             "url": {
               "raw": "{{baseUrl}}/api/dashboard",
               "host": ["{{baseUrl}}"],
