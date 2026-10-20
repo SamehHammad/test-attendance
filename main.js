@@ -11,6 +11,16 @@ let isQuitting = false;
 let restartCount = 0;
 let lastRestartTime = Date.now();
 
+function showRunningNotification() {
+  if (tray && process.platform === 'win32') {
+    tray.displayBalloon({
+      iconType: 'info',
+      title: 'Trivvo Hr',
+      content: 'السيرفر يعمل في الخلفية بشكل جيد.'
+    });
+  }
+}
+
 // --- Set Application Identity for Windows Task Manager & Taskbar ---
 app.setName('Trivvo Hr');
 if (process.platform === 'win32') {
@@ -84,11 +94,7 @@ if (!gotTheLock) {
   app.quit();
 } else {
   app.on('second-instance', () => {
-    dialog.showMessageBox({
-      type: 'info',
-      title: 'Trivvo Hr',
-      message: 'السيرفر يعمل بالفعل في الخلفية. يمكنك عرض السجل أو إغلاقه من الأيقونة بجوار الساعة.'
-    });
+    showRunningNotification();
   });
 
   app.whenReady().then(() => {
@@ -112,17 +118,8 @@ if (!gotTheLock) {
     tray.setToolTip('Trivvo Hr - سيرفر الحضور والانصراف (يعمل في الخلفية)');
     tray.setContextMenu(contextMenu);
 
-    // Clicking tray icon toggles the server log window
-    tray.on('click', () => {
-      if (logWindow) {
-        if (logWindow.isVisible()) {
-          logWindow.hide();
-        } else {
-          logWindow.show();
-          logWindow.focus();
-        }
-      }
-    });
+    // A normal click only confirms that the background server is running.
+    tray.on('click', showRunningNotification);
 
     Menu.setApplicationMenu(null);
 
@@ -134,6 +131,7 @@ if (!gotTheLock) {
       backgroundColor: '#1e1e1e',
       icon: appIconInfo.image,
       show: false, // Run silently in background
+      skipTaskbar: true,
       autoHideMenuBar: true,
       webPreferences: {
         nodeIntegration: false,

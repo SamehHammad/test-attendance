@@ -4,9 +4,6 @@
 
 import fs from "node:fs";
 import path from "node:path";
-import { createRequire } from "node:module";
-
-const require = createRequire(import.meta.url);
 const root = process.cwd();
 
 function copyDir(src, dest) {
@@ -21,6 +18,27 @@ function copyDir(src, dest) {
 
 const standaloneDir = path.join(root, ".next", "standalone");
 
+function assertFile(filePath, description) {
+  if (!fs.existsSync(filePath) || !fs.statSync(filePath).isFile()) {
+    throw new Error(
+      `[copy-assets] Missing ${description}: ${filePath}. Run \`npm run build\` before packaging Electron.`,
+    );
+  }
+}
+
+// Fail before electron-builder creates an installer if the standalone output is
+// incomplete. Next.js loads these files at runtime; a missing manifest otherwise
+// only becomes visible after installing and starting the application.
+assertFile(path.join(standaloneDir, "server.js"), "standalone server");
+assertFile(
+  path.join(standaloneDir, ".next", "server", "middleware-manifest.json"),
+  "Next.js middleware manifest",
+);
+assertFile(
+  path.join(standaloneDir, ".next", "required-server-files.json"),
+  "Next.js required server files manifest",
+);
+
 // 1. Static assets Next.js standalone output doesn't include by default
 copyDir(
   path.join(root, ".next", "static"),
@@ -33,31 +51,5 @@ copyDir(path.join(root, "public"), path.join(standaloneDir, "public"));
 // 3. Build Icons
 copyDir(path.join(root, "build", "icons"), path.join(standaloneDir, "build", "icons"));
 copyDir(path.join(root, "build", "icons"), path.join(root, "dist-electron", "icons"));
-
-// 4. Resolve Prisma's real location
-try {
-  const prismaClientPkgJsonPath = require.resolve("@prisma/client/package.json");
-  const prismaClientDir = path.dirname(prismaClientPkgJsonPath);
-  const nodeModulesDir = path.dirname(path.dirname(prismaClientDir));
-  const dotPrismaDir = path.join(nodeModulesDir, ".prisma");
-
-  copyDir(dotPrismaDir, path.join(standaloneDir, "node_modules", ".prisma"));
-  copyDir(
-    prismaClientDir,
-    path.join(standaloneDir, "node_modules", "@prisma", "client"),
-  );
-} catch (err) {
-  console.warn(`[copy-assets] Warning copying Prisma modules: ${err.message}`);
-}
-
-// 5. Env file
-const envSrc = path.join(root, ".env");
-const envDest = path.join(standaloneDir, ".env");
-if (fs.existsSync(envSrc)) {
-  fs.copyFileSync(envSrc, envDest);
-  console.log(`[copy-assets] Copied ${envSrc} -> ${envDest}`);
-} else {
-  console.warn(`[copy-assets] No .env file found at ${envSrc}, skipping.`);
-}
 
 console.log("[copy-assets] Done.");
