@@ -1,3 +1,5 @@
+import Image from "next/image";
+
 const endpoints = [
   ["POST", "/api/zk/test-connection", "فحص الاتصال وقراءة معلومات الجهاز"],
   ["POST", "/api/zk/sync", "قراءة المستخدمين والحضور ومعلومات الجهاز دفعة واحدة"],
@@ -17,8 +19,18 @@ export default function Home() {
     <main className="min-h-screen bg-slate-950 px-6 py-14 text-slate-100">
       <div className="mx-auto max-w-5xl">
         <div className="mb-10 rounded-3xl border border-emerald-400/20 bg-slate-900 p-8 shadow-2xl shadow-emerald-950/30">
-          <div className="mb-4 inline-flex rounded-full bg-emerald-400/10 px-4 py-2 text-sm font-semibold text-emerald-300">
-            يعمل دون قاعدة بيانات
+          <div className="mb-5 flex items-center gap-4">
+            <Image
+              src="/logo.png"
+              alt="Trivvo Hr"
+              width={64}
+              height={64}
+              className="rounded-2xl border border-emerald-400/20 bg-slate-950/50 p-1 shadow-lg"
+              priority
+            />
+            <div className="inline-flex rounded-full bg-emerald-400/10 px-4 py-2 text-sm font-semibold text-emerald-300">
+              يعمل دون قاعدة بيانات
+            </div>
           </div>
           <h1 className="text-3xl font-bold sm:text-5xl">Trivvo Hr Device Gateway</h1>
           <p className="mt-4 max-w-3xl text-lg leading-8 text-slate-300">

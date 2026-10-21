@@ -21,6 +21,8 @@
 /build/*
 !/build/icons/
 !/build/icon.icns
+!/build/icon.ico
+!/build/icon.png
 /dist/
 /dist-electron/
 

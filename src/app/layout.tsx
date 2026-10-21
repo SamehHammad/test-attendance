@@ -5,6 +5,11 @@ export const metadata: Metadata = {
   title: "Trivvo Hr Device Gateway",
   description: "خادم وسيط لتنفيذ عمليات أجهزة ZKTeco مباشرة دون تخزين محلي",
   keywords: ["ZKTeco", "API", "attendance", "device gateway"],
+  icons: {
+    icon: "/icon.png",
+    shortcut: "/favicon.ico",
+    apple: "/icon.png",
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
