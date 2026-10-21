@@ -4,6 +4,10 @@
   "private": true,
   "description": "Trivvo Hr Attendance Management",
   "author": "Hesabate",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Hesabate/time-attendance-system.git"
+  },
   "main": "main.js",
   "build": {
     "appId": "com.hesabate.attendance",
@@ -15,8 +19,7 @@
     "files": [
       "main.js",
       "build/icons/**/*",
-      "public/**/*",
-      "!node_modules"
+      "public/**/*"
     ],
     "extraResources": [
       {
@@ -54,7 +57,14 @@
     "mac": {
       "target": "dmg",
       "icon": "build/icons/icon.icns"
-    }
+    },
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "Hesabate",
+        "repo": "time-attendance-system"
+      }
+    ]
   },
   "scripts": {
     "dev": "next dev --turbopack -p 3000",
@@ -63,7 +73,8 @@
     "lint": "eslint",
     "build:copy-assets": "node scripts/copy-assets.mjs",
     "electron:dev": "npm run build && npm run build:copy-assets && npx electron .",
-    "electron:build": "npm run build && npm run build:copy-assets && npx electron-builder build --win"
+    "electron:build": "npm run build && npm run build:copy-assets && npx electron-builder build --win",
+    "electron:publish": "npm run build && npm run build:copy-assets && npx electron-builder build --win --publish always"
   },
   "devDependencies": {
     "@hookform/resolvers": "^5.2.2",

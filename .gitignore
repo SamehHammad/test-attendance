@@ -18,7 +18,9 @@
 /out/
 
 # production
-/build
+/build/*
+!/build/icons/
+!/build/icon.icns
 /dist/
 /dist-electron/
 

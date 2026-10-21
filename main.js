@@ -11,6 +11,22 @@ let isQuitting = false;
 let restartCount = 0;
 let lastRestartTime = Date.now();
 
+// --- Auto-updater setup via electron-updater ---
+let autoUpdater = null;
+try {
+  autoUpdater = require('electron-updater').autoUpdater;
+} catch (e) {
+  console.error('Failed to load electron-updater:', e);
+}
+
+const updateState = {
+  status: 'idle', // 'idle' | 'checking' | 'downloading' | 'downloaded' | 'error'
+  info: null,
+  progress: 0,
+  error: null,
+  isManualCheck: false
+};
+
 function showRunningNotification() {
   if (tray && process.platform === 'win32') {
     tray.displayBalloon({
@@ -108,16 +124,7 @@ if (!gotTheLock) {
     const appIconInfo = getAppIcon();
     tray = new Tray(appIconInfo.image);
 
-    const contextMenu = Menu.buildFromTemplate([
-      { label: 'عرض سجل السيرفر', click: () => { if (logWindow) { logWindow.show(); logWindow.focus(); } } },
-      { label: 'إعادة تشغيل السيرفر', click: () => startServer() },
-      { type: 'separator' },
-      { label: 'إغلاق السيرفر بالكامل', click: () => { isQuitting = true; app.quit(); } }
-    ]);
-
     tray.setToolTip('Trivvo Hr - سيرفر الحضور والانصراف (يعمل في الخلفية)');
-    tray.setContextMenu(contextMenu);
-
     // A normal click only confirms that the background server is running.
     tray.on('click', showRunningNotification);
 
@@ -195,6 +202,243 @@ if (!gotTheLock) {
         ).catch(() => {});
       }
     }
+
+    // --- Dynamic Tray Menu & Auto-updater Management ---
+    function updateTrayMenu() {
+      if (!tray) return;
+
+      const menuItems = [
+        {
+          label: 'عرض سجل السيرفر',
+          click: () => {
+            if (logWindow) {
+              logWindow.show();
+              logWindow.focus();
+            }
+          }
+        },
+        {
+          label: 'إعادة تشغيل السيرفر',
+          click: () => startServer()
+        },
+        { type: 'separator' }
+      ];
+
+      if (updateState.status === 'downloaded') {
+        const newVer = updateState.info && updateState.info.version ? ` (v${updateState.info.version})` : '';
+        menuItems.push({
+          label: `⚡ تثبيت التحديث الآن${newVer} وإعادة التشغيل`,
+          click: () => {
+            const choice = dialog.showMessageBoxSync({
+              type: 'question',
+              buttons: ['تثبيت وإعادة التشغيل الآن', 'لاحقًا'],
+              defaultId: 0,
+              cancelId: 1,
+              title: 'تحديث Trivvo Hr',
+              message: `تم تنزيل الإصدار الجديد${newVer} بنجاح.`,
+              detail: 'هل ترغب في تثبيت التحديث وإعادة تشغيل التطبيق الآن؟ سيتم إغلاق السيرفر وإعادة تشغيله فور التثبيت.'
+            });
+            if (choice === 0) {
+              isQuitting = true;
+              if (serverProcess) {
+                try {
+                  if (process.platform === 'win32') {
+                    execSync(`taskkill /pid ${serverProcess.pid} /T /F`, { windowsHide: true });
+                  } else {
+                    serverProcess.kill();
+                  }
+                } catch (e) {}
+                serverProcess = null;
+              }
+              if (autoUpdater) {
+                autoUpdater.quitAndInstall(false, true);
+              }
+            }
+          }
+        });
+        menuItems.push({ type: 'separator' });
+      } else if (updateState.status === 'downloading') {
+        menuItems.push({
+          label: `📥 جاري تنزيل التحديث (${updateState.progress}%)...`,
+          enabled: false
+        });
+        menuItems.push({ type: 'separator' });
+      } else if (updateState.status === 'checking') {
+        menuItems.push({
+          label: '🔍 جاري التحقق من التحديثات...',
+          enabled: false
+        });
+        menuItems.push({ type: 'separator' });
+      } else {
+        menuItems.push({
+          label: 'التحقق من وجود تحديثات...',
+          click: () => checkForUpdates(true)
+        });
+        menuItems.push({ type: 'separator' });
+      }
+
+      menuItems.push({
+        label: `الإصدار الحالي: v${app.getVersion()}`,
+        enabled: false
+      });
+
+      menuItems.push({ type: 'separator' });
+
+      menuItems.push({
+        label: 'إغلاق السيرفر بالكامل',
+        click: () => {
+          isQuitting = true;
+          app.quit();
+        }
+      });
+
+      const contextMenu = Menu.buildFromTemplate(menuItems);
+      tray.setContextMenu(contextMenu);
+    }
+
+    function checkForUpdates(manual = false) {
+      if (!autoUpdater) {
+        if (manual) {
+          dialog.showMessageBox({
+            type: 'warning',
+            title: 'تحديث البرنامج',
+            message: 'مكتبة التحديثات التلقائية غير مهيأة.'
+          });
+        }
+        return;
+      }
+
+      if (!app.isPackaged) {
+        sendLog(`ℹ️ التحقق من التحديثات متاح فقط في النسخة المثبتة (Production). الإصدار الحالي: v${app.getVersion()}`, 'info');
+        if (manual) {
+          dialog.showMessageBox({
+            type: 'info',
+            title: 'تحديث البرنامج (وضع التطوير)',
+            message: 'أنت تعمل حالياً في وضع التطوير (Development Mode).',
+            detail: `الإصدار الحالي: v${app.getVersion()}\nنظام التحديث التلقائي يفحص GitHub Releases عند تثبيت التطبيق الفعلي على أجهزة العملاء.`
+          });
+        }
+        return;
+      }
+
+      updateState.isManualCheck = manual;
+      updateState.status = 'checking';
+      updateTrayMenu();
+      sendLog(manual ? '🔍 جاري فحص التحديثات يدويًا من GitHub...' : '🔍 جاري فحص وجود تحديثات تلقائية من GitHub...', 'info');
+
+      autoUpdater.checkForUpdates().catch((err) => {
+        updateState.status = 'error';
+        updateState.error = err ? (err.message || String(err)) : 'Unknown error';
+        sendLog(`⚠️ تعذر التحقق من التحديثات: ${updateState.error}`, 'error');
+        updateTrayMenu();
+        if (manual) {
+          dialog.showMessageBox({
+            type: 'error',
+            title: 'فحص التحديثات',
+            message: 'تعذر الاتصال بـ GitHub للتحقق من التحديثات.',
+            detail: 'تأكد من اتصال الإنترنت ثم حاول مرة أخرى.\n' + updateState.error
+          });
+        }
+      });
+    }
+
+    function setupAutoUpdater() {
+      if (!autoUpdater) return;
+
+      autoUpdater.autoDownload = true;
+      autoUpdater.autoInstallOnAppQuit = true;
+
+      autoUpdater.logger = {
+        info: (msg) => { console.log(msg); sendLog(`[Update] ${msg}`, 'info'); },
+        warn: (msg) => { console.warn(msg); sendLog(`[Update] ${msg}`, 'info'); },
+        error: (msg) => { console.error(msg); sendLog(`[Update Error] ${msg}`, 'error'); },
+        debug: () => {}
+      };
+
+      autoUpdater.on('checking-for-update', () => {
+        updateState.status = 'checking';
+        sendLog('🔍 جاري فحص وجود تحديثات جديدة للتطبيق على GitHub Releases...', 'info');
+        updateTrayMenu();
+      });
+
+      autoUpdater.on('update-available', (info) => {
+        updateState.status = 'downloading';
+        updateState.info = info;
+        const msg = `🚀 تم العثور على إصدار جديد (v${info.version})! جاري تنزيل التحديث في الخلفية...`;
+        sendLog(msg, 'success');
+        if (tray && process.platform === 'win32') {
+          tray.displayBalloon({
+            iconType: 'info',
+            title: 'تحديث جديد متوفر (Trivvo Hr)',
+            content: `تم العثور على الإصدار ${info.version}. جاري تنزيله في الخلفية دون مقاطعة العمل.`
+          });
+        }
+        updateTrayMenu();
+      });
+
+      autoUpdater.on('update-not-available', (info) => {
+        const wasManual = updateState.isManualCheck;
+        updateState.status = 'idle';
+        updateState.isManualCheck = false;
+        sendLog(`✅ التطبيق محدّث إلى أحدث إصدار متوفر (v${app.getVersion()}).`, 'success');
+        updateTrayMenu();
+        if (wasManual) {
+          dialog.showMessageBox({
+            type: 'info',
+            title: 'تحديث البرنامج',
+            message: 'أنت تستخدم أحدث إصدار بالفعل!',
+            detail: `الإصدار الحالي: v${app.getVersion()}`
+          });
+        }
+      });
+
+      autoUpdater.on('download-progress', (progressObj) => {
+        const percent = Math.floor(progressObj.percent || 0);
+        if (percent !== updateState.progress) {
+          updateState.progress = percent;
+          updateTrayMenu();
+          if (percent === 25 || percent === 50 || percent === 75 || percent === 100) {
+            sendLog(`📥 تحميل التحديث: ${percent}%...`, 'info');
+          }
+        }
+      });
+
+      autoUpdater.on('update-downloaded', (info) => {
+        updateState.status = 'downloaded';
+        updateState.info = info;
+        const msg = `🎉 تم تنزيل التحديث بنجاح (الإصدار v${info.version})! جاهز للتثبيت.`;
+        sendLog(msg, 'success');
+        if (tray && process.platform === 'win32') {
+          tray.displayBalloon({
+            iconType: 'info',
+            title: '🎉 التحديث جاهز للتثبيت',
+            content: `تم تنزيل الإصدار ${info.version} بنجاح. انقر بالزر الأيمن على الأيقونة لاختيار "تثبيت التحديث الآن" أو سيتم تثبيته تلقائيًا عند إعادة التشغيل القادمة.`
+          });
+        }
+        updateTrayMenu();
+      });
+
+      autoUpdater.on('error', (err) => {
+        const wasManual = updateState.isManualCheck;
+        updateState.status = 'error';
+        updateState.isManualCheck = false;
+        updateState.error = err ? (err.message || String(err)) : 'خطأ غير معروف';
+        sendLog(`⚠️ خطأ في نظام التحديثات: ${updateState.error}`, 'error');
+        updateTrayMenu();
+        if (wasManual) {
+          dialog.showMessageBox({
+            type: 'error',
+            title: 'خطأ في التحديث',
+            message: 'حدث خطأ أثناء فحص أو تنزيل التحديث.',
+            detail: updateState.error
+          });
+        }
+      });
+    }
+
+    // Initialize autoUpdater events and set up initial tray menu
+    setupAutoUpdater();
+    updateTrayMenu();
 
     // --- Server Process Lifecycle & Watchdog ---
     function startServer() {
@@ -318,6 +562,19 @@ if (!gotTheLock) {
               title: 'Trivvo Hr',
               content: `السيرفر يعمل الآن بنجاح في الخلفية على http://localhost:${checkPort}`
             });
+          }
+
+          // Trigger automatic updates checking in packaged production
+          if (app.isPackaged && autoUpdater) {
+            // Check 15 seconds after server startup
+            setTimeout(() => {
+              checkForUpdates(false);
+            }, 15000);
+
+            // Check periodically every 4 hours
+            setInterval(() => {
+              checkForUpdates(false);
+            }, 4 * 60 * 60 * 1000);
           }
         })
         .catch((err) => {
