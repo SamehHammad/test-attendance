@@ -7,7 +7,7 @@ export class DeviceConnectionManager {
    * Create a new ZKLib instance.
    */
   static createInstance(device: ZKDevice) {
-    return new ZKLib(device.ip, device.port, device.timeout || 15000, device.inport || 4000);
+    return new ZKLib(device.ip, device.port, device.timeout || 3000, device.inport || 4000);
   }
 
   /**
@@ -29,19 +29,27 @@ export class DeviceConnectionManager {
         const result = await operation(zk);
         await this.safeDisconnect(zk);
         return result;
-      } catch (error) {
+      } catch (error: any) {
         lastError = error;
-        console.warn(`[ZK Connection Manager] Connection to ${device.ip}:${device.port} failed on attempt ${attempt}. Error:`, error);
+        console.warn(`[ZK Connection Manager] Connection to ${device.ip}:${device.port} failed on attempt ${attempt}. Error:`, error?.message || error);
         await this.safeDisconnect(zk);
         
+        // If the host is completely unreachable or timed out during initial connect, don't repeat doomed retries
+        const errCode = error?.code || error?.err?.code || '';
+        const errMsg = String(error?.message || error?.err?.message || '');
+        const isUnreachable = errCode === 'ETIMEDOUT' || errCode === 'EHOSTUNREACH' || errCode === 'ENETUNREACH' || errCode === 'ECONNREFUSED' || errMsg.includes('timed out');
+        if (isUnreachable) {
+          break;
+        }
+
         if (attempt < retries) {
           // Wait briefly before retrying
-          await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
+          await new Promise(resolve => setTimeout(resolve, 500 * attempt));
         }
       }
     }
 
-    console.error(`[ZK Connection Manager] All ${retries} attempts failed for ${device.ip}:${device.port}. Falling back. Error:`, lastError);
+    console.error(`[ZK Connection Manager] All attempts failed for ${device.ip}:${device.port}. Falling back. Error:`, lastError?.message || lastError);
     return fallback();
   }
 

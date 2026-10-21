@@ -21,6 +21,7 @@ export interface ZKAttendanceRecord {
   deviceUserId: string; // Backward compatibility
   timestamp: Date;
   recordTime: Date; // Backward compatibility
+  deviceTime?: string; // Device clock time formatted as YYYY-MM-DD HH:mm:ss
   verifyModeCode: number;
   verifyType: string;
   attendanceStateCode: number;

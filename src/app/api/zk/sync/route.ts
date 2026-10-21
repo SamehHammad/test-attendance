@@ -9,7 +9,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, error }, { status: 400 });
     }
 
-    const result = await zkService.getSyncData(device.ip, device.port);
+    const result = await zkService.getSyncData(device.ip, device.port, device.timeout);
     if (!result.success) {
       return NextResponse.json(
         { success: false, error: result.error || "فشل قراءة بيانات الجهاز" },

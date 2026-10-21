@@ -41,7 +41,7 @@ export async function parseDeviceParams(req: Request): Promise<{ device?: ZKDire
     const ip = body.ip || body.device?.ip || url.searchParams.get("ip");
     const portRaw = body.port || body.device?.port || url.searchParams.get("port") || 4370;
     const inportRaw = body.inport || body.device?.inport || url.searchParams.get("inport") || 4000;
-    const timeoutRaw = body.timeout || body.device?.timeout || url.searchParams.get("timeout") || 15000;
+    const timeoutRaw = body.timeout || body.device?.timeout || url.searchParams.get("timeout") || 3000;
 
     if (!ip || typeof ip !== "string" || !ip.trim()) {
       return { body, error: "يرجى تحديد عنوان IP الخاص بالجهاز (ip)" };
@@ -57,7 +57,7 @@ export async function parseDeviceParams(req: Request): Promise<{ device?: ZKDire
         ip: ip.trim(),
         port,
         inport: parseInt(String(inportRaw), 10) || 4000,
-        timeout: parseInt(String(timeoutRaw), 10) || 15000,
+        timeout: parseInt(String(timeoutRaw), 10) || 3000,
       },
       body,
     };

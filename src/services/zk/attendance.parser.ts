@@ -44,7 +44,11 @@ export class AttendanceParser {
     const month = time % 12;
     time = (time - month) / 12;
     const year = time + 2000;
-    return new Date(year, month, day, hour, minute, second);
+    const date = new Date(year, month, day, hour, minute, second);
+    const pad = (n: number) => String(n).padStart(2, '0');
+    const formatted = `${year}-${pad(month + 1)}-${pad(day)} ${pad(hour)}:${pad(minute)}:${pad(second)}`;
+    date.toJSON = () => formatted;
+    return date;
   }
 
   /**
@@ -66,12 +70,15 @@ export class AttendanceParser {
     const verifyModeCode = recordData.readUInt8(26);
     const recordTime = this.parseTimeToDate(recordData.readUInt32LE(27));
     const attendanceStateCode = recordData.readUInt8(31);
+    const pad = (n: number) => String(n).padStart(2, '0');
+    const deviceTime = `${recordTime.getFullYear()}-${pad(recordTime.getMonth() + 1)}-${pad(recordTime.getDate())} ${pad(recordTime.getHours())}:${pad(recordTime.getMinutes())}:${pad(recordTime.getSeconds())}`;
 
     return {
       employeeId: deviceUserId,
       deviceUserId: deviceUserId,
       timestamp: recordTime,
       recordTime: recordTime,
+      deviceTime,
       verifyModeCode,
       verifyType: this.getVerifyTypeString(verifyModeCode),
       attendanceStateCode,
@@ -97,12 +104,15 @@ export class AttendanceParser {
     const verifyModeCode = recordData.readUInt8(2);
     const attendanceStateCode = recordData.readUInt8(3);
     const recordTime = this.parseTimeToDate(recordData.readUInt32LE(4));
+    const pad = (n: number) => String(n).padStart(2, '0');
+    const deviceTime = `${recordTime.getFullYear()}-${pad(recordTime.getMonth() + 1)}-${pad(recordTime.getDate())} ${pad(recordTime.getHours())}:${pad(recordTime.getMinutes())}:${pad(recordTime.getSeconds())}`;
 
     return {
       employeeId: deviceUserId,
       deviceUserId: deviceUserId,
       timestamp: recordTime,
       recordTime: recordTime,
+      deviceTime,
       verifyModeCode,
       verifyType: this.getVerifyTypeString(verifyModeCode),
       attendanceStateCode,

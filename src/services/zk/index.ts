@@ -34,13 +34,27 @@ class ZKServiceFacade {
         .map((rec: any) => {
           const state = typeof rec.type === 'number' ? rec.type : (rec.attendanceStateCode ?? 0);
           const verifyCode = typeof rec.verifyMode === 'number' ? rec.verifyMode : (rec.verifyModeCode ?? 0);
-          const parsedTime = rec.recordTime ? new Date(rec.recordTime) : (rec.timestamp ? new Date(rec.timestamp) : new Date());
+          const rawTime = rec.recordTime || rec.timestamp;
+          let parsedTime: Date;
+          if (rawTime instanceof Date) {
+            parsedTime = new Date(rawTime.getTime());
+          } else if (rawTime) {
+            parsedTime = new Date(rawTime);
+          } else {
+            parsedTime = new Date();
+          }
+
+          const pad = (n: number) => String(n).padStart(2, '0');
+          const formattedTime = rec.deviceTime || `${parsedTime.getFullYear()}-${pad(parsedTime.getMonth() + 1)}-${pad(parsedTime.getDate())} ${pad(parsedTime.getHours())}:${pad(parsedTime.getMinutes())}:${pad(parsedTime.getSeconds())}`;
+          parsedTime.toJSON = () => formattedTime;
+
           const uid = String(rec.deviceUserId || rec.employeeId || '').trim();
           return {
             employeeId: uid,
             deviceUserId: uid,
             timestamp: parsedTime,
             recordTime: parsedTime,
+            deviceTime: formattedTime,
             verifyModeCode: verifyCode,
             verifyType: AttendanceParser.getVerifyTypeString(verifyCode),
             attendanceStateCode: state,
@@ -56,9 +70,9 @@ class ZKServiceFacade {
     }
   }
 
-  async testConnection(ip: string, port: number): Promise<{ success: boolean; info?: ZKDeviceInfo; error?: string }> {
+  async testConnection(ip: string, port: number, timeout = 3000): Promise<{ success: boolean; info?: ZKDeviceInfo; error?: string }> {
     return DeviceConnectionManager.executeWithRetry<{ success: boolean; info?: ZKDeviceInfo; error?: string }>(
-      { ip, port },
+      { ip, port, timeout },
       async (zk) => {
         const info = await zk.getInfo();
         return { success: true, info };
@@ -66,22 +80,24 @@ class ZKServiceFacade {
       () => ({
         success: false,
         error: "فشل الاتصال بالجهاز"
-      })
+      }),
+      1
     );
   }
 
-  async getAttendance(ip: string, port: number): Promise<{ success: boolean; data?: ZKAttendanceRecord[]; error?: string }> {
+  async getAttendance(ip: string, port: number, timeout = 5000): Promise<{ success: boolean; data?: ZKAttendanceRecord[]; error?: string }> {
     return DeviceConnectionManager.executeWithRetry<{ success: boolean; data?: ZKAttendanceRecord[]; error?: string }>(
-      { ip, port },
+      { ip, port, timeout },
       async (zk) => {
         const data = await this.parseAndNormalizeAttendances(zk);
         return { success: true, data };
       },
-      () => ({ success: false, error: "فشل الاتصال بالجهاز", data: [] })
+      () => ({ success: false, error: "فشل الاتصال بالجهاز", data: [] }),
+      1
     );
   }
 
-  async getSyncData(ip: string, port: number): Promise<{
+  async getSyncData(ip: string, port: number, timeout = 5000): Promise<{
     success: boolean;
     attendance?: ZKAttendanceRecord[];
     users?: ZKUser[];
@@ -95,7 +111,7 @@ class ZKServiceFacade {
       info?: ZKDeviceInfo;
       error?: string;
     }>(
-      { ip, port },
+      { ip, port, timeout },
       async (zk) => {
         const attendance = await this.parseAndNormalizeAttendances(zk);
 

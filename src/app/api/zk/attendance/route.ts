@@ -26,7 +26,7 @@ export async function POST(req: Request) {
       filterEndDate.setHours(23, 59, 59, 999);
     }
 
-    const result = await zkService.getAttendance(device.ip, device.port);
+    const result = await zkService.getAttendance(device.ip, device.port, device.timeout);
     if (!result.success || !result.data) {
       return NextResponse.json(
         { success: false, error: result.error || "فشل قراءة حركات الحضور من الجهاز" },

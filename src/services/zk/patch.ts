@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-require-imports */
+const net = require('net');
 const utils = require('node-zklib/utils');
 const ZKLibTCP = require('node-zklib/zklibtcp');
 const { MAX_CHUNK, COMMANDS, REQUEST_DATA } = require('node-zklib/constants');
@@ -18,7 +19,11 @@ function parseTimeToDate(time: number): Date {
   const month = time % 12;
   time = (time - month) / 12;
   const year = time + 2000;
-  return new Date(year, month, day, hour, minute, second);
+  const date = new Date(year, month, day, hour, minute, second);
+  const pad = (n: number) => String(n).padStart(2, '0');
+  const formatted = `${year}-${pad(month + 1)}-${pad(day)} ${pad(hour)}:${pad(minute)}:${pad(second)}`;
+  date.toJSON = () => formatted;
+  return date;
 }
 
 // --- 40-byte Attendance Log Parser (Full 24-character user ID, real type & verifyMode) ---
@@ -342,6 +347,61 @@ ZKLibTCP.prototype.getUsers = async function () {
   }
 
   return { data: users, err: data.err };
+};
+
+// --- Patch ZKLibTCP.prototype.createSocket with Strict Connect Timeout ---
+ZKLibTCP.prototype.createSocket = function (cbError: any, cbClose: any) {
+  return new Promise((resolve, reject) => {
+    this.socket = new net.Socket();
+    let isSettled = false;
+
+    // Strict connect timeout (default 3000ms if not specified)
+    const connectTimeoutMs = this.timeout || 3000;
+
+    const connectTimer = setTimeout(() => {
+      if (!isSettled) {
+        isSettled = true;
+        const err: any = new Error(`Connection to ${this.ip}:${this.port} timed out after ${connectTimeoutMs}ms`);
+        err.code = 'ETIMEDOUT';
+        if (this.socket) {
+          try {
+            this.socket.destroy();
+          } catch {}
+          this.socket = null;
+        }
+        reject(err);
+        if (cbError) cbError(err);
+      }
+    }, connectTimeoutMs);
+
+    this.socket.once('error', (err: any) => {
+      clearTimeout(connectTimer);
+      if (!isSettled) {
+        isSettled = true;
+        reject(err);
+        if (cbError) cbError(err);
+      }
+    });
+
+    this.socket.once('connect', () => {
+      clearTimeout(connectTimer);
+      if (!isSettled) {
+        isSettled = true;
+        if (this.timeout) {
+          this.socket.setTimeout(this.timeout);
+        }
+        resolve(this.socket);
+      }
+    });
+
+    this.socket.once('close', (err: any) => {
+      clearTimeout(connectTimer);
+      this.socket = null;
+      if (cbClose) cbClose('tcp');
+    });
+
+    this.socket.connect(this.port, this.ip);
+  });
 };
 
 console.log("[ZK Patch] Protocol patch applied successfully.");

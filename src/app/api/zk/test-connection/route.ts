@@ -9,7 +9,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ success: false, error }, { status: 400 });
     }
 
-    const result = await zkService.testConnection(device.ip, device.port);
+    const result = await zkService.testConnection(device.ip, device.port, device.timeout);
 
     return NextResponse.json({
       success: result.success,
