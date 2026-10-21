@@ -32,7 +32,7 @@ function showRunningNotification() {
     tray.displayBalloon({
       iconType: 'info',
       title: 'Trivvo Hr',
-      content: 'بسم الله الرحمن الرحيم وبه نستعين'
+      content: 'السيرفر يعمل في الخلفية بشكل جيد.'
     });
   }
 }
