@@ -62,7 +62,8 @@
       {
         "provider": "github",
         "owner": "SamehHammad",
-        "repo": "test-attendance"
+        "repo": "test-attendance",
+        "releaseType": "release"
       }
     ]
   },
