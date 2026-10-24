@@ -32,7 +32,7 @@ function showRunningNotification() {
     tray.displayBalloon({
       iconType: 'info',
       title: 'Trivvo Hr',
-      content: 'اختبار تحديث تلقائي 2 تيست'
+      content: 'السيرفر يعمل في الخلفية بشكل جيد ومحدث لاخر اصدار '
     });
   }
 }
