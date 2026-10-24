@@ -32,7 +32,7 @@ function showRunningNotification() {
     tray.displayBalloon({
       iconType: 'info',
       title: 'Trivvo Hr',
-      content: 'اختبار تحديث تلقائي'
+      content: 'اختبار تحديث تلقائي 2 تيست'
     });
   }
 }
