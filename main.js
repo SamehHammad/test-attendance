@@ -239,20 +239,7 @@ if (!gotTheLock) {
               detail: 'هل ترغب في تثبيت التحديث وإعادة تشغيل التطبيق الآن؟ سيتم إغلاق السيرفر وإعادة تشغيله فور التثبيت.'
             });
             if (choice === 0) {
-              isQuitting = true;
-              if (serverProcess) {
-                try {
-                  if (process.platform === 'win32') {
-                    execSync(`taskkill /pid ${serverProcess.pid} /T /F`, { windowsHide: true });
-                  } else {
-                    serverProcess.kill();
-                  }
-                } catch (e) {}
-                serverProcess = null;
-              }
-              if (autoUpdater) {
-                autoUpdater.quitAndInstall(false, true);
-              }
+              installUpdateNow();
             }
           }
         });
@@ -342,6 +329,31 @@ if (!gotTheLock) {
       });
     }
 
+    const AUTO_INSTALL_DELAY_MS = 60 * 1000;
+    let autoInstallTimer = null;
+
+    // Stop the server and silently run the downloaded installer, then relaunch the app
+    function installUpdateNow() {
+      if (!autoUpdater) return;
+      if (autoInstallTimer) {
+        clearTimeout(autoInstallTimer);
+        autoInstallTimer = null;
+      }
+      isQuitting = true;
+      if (serverProcess) {
+        try {
+          if (process.platform === 'win32') {
+            execSync(`taskkill /pid ${serverProcess.pid} /T /F`, { windowsHide: true });
+          } else {
+            serverProcess.kill();
+          }
+        } catch (e) {}
+        serverProcess = null;
+      }
+      // isSilent = true (no NSIS wizard), isForceRunAfter = true (relaunch after install)
+      autoUpdater.quitAndInstall(true, true);
+    }
+
     function setupAutoUpdater() {
       if (!autoUpdater) return;
 
@@ -412,10 +424,17 @@ if (!gotTheLock) {
           tray.displayBalloon({
             iconType: 'info',
             title: '🎉 التحديث جاهز للتثبيت',
-            content: `تم تنزيل الإصدار ${info.version} بنجاح. انقر بالزر الأيمن على الأيقونة لاختيار "تثبيت التحديث الآن" أو سيتم تثبيته تلقائيًا عند إعادة التشغيل القادمة.`
+            content: `تم تنزيل الإصدار ${info.version} بنجاح. سيتم تثبيته تلقائيًا وإعادة تشغيل التطبيق خلال دقيقة واحدة.`
           });
         }
         updateTrayMenu();
+
+        // Install silently without user interaction after a short grace period
+        if (autoInstallTimer) clearTimeout(autoInstallTimer);
+        autoInstallTimer = setTimeout(() => {
+          sendLog(`⚡ جاري تثبيت التحديث v${info.version} تلقائيًا وإعادة التشغيل...`, 'info');
+          installUpdateNow();
+        }, AUTO_INSTALL_DELAY_MS);
       });
 
       autoUpdater.on('error', (err) => {
@@ -571,10 +590,11 @@ if (!gotTheLock) {
               checkForUpdates(false);
             }, 15000);
 
-            // Check periodically every 4 hours
+            // Check periodically every 30 minutes (skip while a download/install is in progress)
             setInterval(() => {
+              if (updateState.status === 'downloading' || updateState.status === 'downloaded') return;
               checkForUpdates(false);
-            }, 4 * 60 * 60 * 1000);
+            }, 30 * 60 * 1000);
           }
         })
         .catch((err) => {

@@ -2,12 +2,19 @@ name: Release and Publish Windows App
 
 on:
   push:
-    tags:
-      - 'v*'
+    branches:
+      - main
+    paths-ignore:
+      - '**.md'
   workflow_dispatch:
 
 permissions:
   contents: write
+
+# Never publish two releases at the same time; a newer push cancels the older build
+concurrency:
+  group: release-main
+  cancel-in-progress: true
 
 jobs:
   build-and-release:
@@ -28,6 +35,17 @@ jobs:
 
       - name: Install Dependencies
         run: npm ci
+
+      # Auto-bump version: MAJOR.MINOR.(PATCH + run_number) so every push to main
+      # produces a strictly higher version that electron-updater will pick up.
+      - name: Compute Release Version
+        shell: bash
+        run: |
+          BASE=$(node -p "require('./package.json').version")
+          IFS='.' read -r MAJOR MINOR PATCH <<< "$BASE"
+          VERSION="$MAJOR.$MINOR.$((PATCH + GITHUB_RUN_NUMBER))"
+          npm version "$VERSION" --no-git-tag-version --allow-same-version
+          echo "Release version: $VERSION"
 
       - name: Build Next.js Application
         run: npm run build
