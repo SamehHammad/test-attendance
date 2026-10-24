@@ -590,11 +590,11 @@ if (!gotTheLock) {
               checkForUpdates(false);
             }, 15000);
 
-            // Check periodically every 30 minutes (skip while a download/install is in progress)
+            // Check periodically every 5 minutes (skip while a download/install is in progress)
             setInterval(() => {
               if (updateState.status === 'downloading' || updateState.status === 'downloaded') return;
               checkForUpdates(false);
-            }, 30 * 60 * 1000);
+            }, 5 * 60 * 1000);
           }
         })
         .catch((err) => {
