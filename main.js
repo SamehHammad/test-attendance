@@ -32,7 +32,7 @@ function showRunningNotification() {
     tray.displayBalloon({
       iconType: 'info',
       title: 'Trivvo Hr',
-      content: 'السيرفر يعمل في الخلفية بشكل جيد ومحدث لاخر اصدار '
+      content: 'السيرفر يعمل في الخلفية بشكل جيد'
     });
   }
 }
@@ -199,7 +199,7 @@ if (!gotTheLock) {
       if (logWindow && !logWindow.isDestroyed()) {
         logWindow.webContents.executeJavaScript(
           `(function(){ var el = document.getElementById('log'); if(el){ var d = document.createElement('div'); d.className = '${cls}'; d.textContent = ${JSON.stringify(String(msg))}; el.appendChild(d); window.scrollTo(0, document.body.scrollHeight); } })()`
-        ).catch(() => {});
+        ).catch(() => { });
       }
     }
 
@@ -347,7 +347,7 @@ if (!gotTheLock) {
           } else {
             serverProcess.kill();
           }
-        } catch (e) {}
+        } catch (e) { }
         serverProcess = null;
       }
       // isSilent = true (no NSIS wizard), isForceRunAfter = true (relaunch after install)
@@ -364,7 +364,7 @@ if (!gotTheLock) {
         info: (msg) => { console.log(msg); sendLog(`[Update] ${msg}`, 'info'); },
         warn: (msg) => { console.warn(msg); sendLog(`[Update] ${msg}`, 'info'); },
         error: (msg) => { console.error(msg); sendLog(`[Update Error] ${msg}`, 'error'); },
-        debug: () => {}
+        debug: () => { }
       };
 
       autoUpdater.on('checking-for-update', () => {
@@ -468,7 +468,7 @@ if (!gotTheLock) {
           } else {
             serverProcess.kill();
           }
-        } catch (e) {}
+        } catch (e) { }
         serverProcess = null;
       }
 
@@ -621,7 +621,7 @@ if (!gotTheLock) {
         } else {
           serverProcess.kill();
         }
-      } catch (e) {}
+      } catch (e) { }
     }
   });
 }
